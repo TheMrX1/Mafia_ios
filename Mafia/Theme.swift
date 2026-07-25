@@ -59,6 +59,34 @@ extension AppTheme {
                 buttonText: .white,
                 prefersDark: false
             )
+        case .velvet:
+            ThemePalette(
+                background: Color(red: 0.045, green: 0.008, blue: 0.014),
+                secondaryBackground: Color(red: 0.12, green: 0.018, blue: 0.03),
+                surface: Color(red: 0.13, green: 0.025, blue: 0.04).opacity(0.91),
+                elevatedSurface: Color(red: 0.18, green: 0.038, blue: 0.055).opacity(0.96),
+                text: Color(red: 1, green: 0.95, blue: 0.90),
+                secondaryText: Color(red: 0.80, green: 0.69, blue: 0.66),
+                accent: Color(red: 0.88, green: 0.65, blue: 0.34),
+                secondaryAccent: Color(red: 0.76, green: 0.15, blue: 0.23),
+                border: Color(red: 0.88, green: 0.65, blue: 0.34).opacity(0.28),
+                buttonText: Color(red: 0.12, green: 0.025, blue: 0.03),
+                prefersDark: true
+            )
+        case .midnight:
+            ThemePalette(
+                background: Color(red: 0.008, green: 0.025, blue: 0.055),
+                secondaryBackground: Color(red: 0.016, green: 0.06, blue: 0.12),
+                surface: Color(red: 0.025, green: 0.075, blue: 0.14).opacity(0.90),
+                elevatedSurface: Color(red: 0.035, green: 0.105, blue: 0.19).opacity(0.96),
+                text: Color(red: 0.93, green: 0.97, blue: 1),
+                secondaryText: Color(red: 0.65, green: 0.74, blue: 0.84),
+                accent: Color(red: 0.42, green: 0.78, blue: 1),
+                secondaryAccent: Color(red: 0.60, green: 0.56, blue: 1),
+                border: Color(red: 0.55, green: 0.78, blue: 1).opacity(0.24),
+                buttonText: Color(red: 0.015, green: 0.05, blue: 0.10),
+                prefersDark: true
+            )
         }
     }
 
@@ -67,6 +95,16 @@ extension AppTheme {
         case .neonNoir: "BackgroundNeon"
         case .artDeco: "BackgroundDeco"
         case .minimal: "BackgroundMinimal"
+        case .velvet: "BackgroundDeco"
+        case .midnight: "BackgroundNeon"
+        }
+    }
+
+    var backgroundTint: Color {
+        switch self {
+        case .velvet: Color(red: 0.72, green: 0.16, blue: 0.19)
+        case .midnight: Color(red: 0.25, green: 0.48, blue: 0.86)
+        default: .white
         }
     }
 
@@ -75,6 +113,8 @@ extension AppTheme {
         case .neonNoir: 24
         case .artDeco: 8
         case .minimal: 20
+        case .velvet: 18
+        case .midnight: 22
         }
     }
 }
@@ -106,6 +146,7 @@ struct ThemedBackground<Content: View>: View {
             Image(theme.backgroundImage)
                 .resizable()
                 .scaledToFill()
+                .colorMultiply(theme.backgroundTint)
                 .ignoresSafeArea()
 
             LinearGradient(
@@ -114,10 +155,6 @@ struct ThemedBackground<Content: View>: View {
                 endPoint: .bottom
             )
             .ignoresSafeArea()
-
-            AmbientLight(theme: theme)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
 
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -134,40 +171,10 @@ struct ThemedBackground<Content: View>: View {
             [Color.black.opacity(0.18), Color.black.opacity(0.64)]
         case .artDeco:
             [Color.black.opacity(0.22), Color.black.opacity(0.68)]
-        }
-    }
-}
-
-private struct AmbientLight: View {
-    let theme: AppTheme
-    @State private var drifting = false
-
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                Circle()
-                    .fill(theme.palette.accent.opacity(theme == .minimal ? 0.08 : 0.12))
-                    .frame(width: proxy.size.width * 0.92)
-                    .blur(radius: 80)
-                    .offset(
-                        x: drifting ? proxy.size.width * 0.24 : -proxy.size.width * 0.30,
-                        y: drifting ? -proxy.size.height * 0.30 : -proxy.size.height * 0.10
-                    )
-
-                Circle()
-                    .fill(theme.palette.secondaryAccent.opacity(theme == .minimal ? 0.05 : 0.08))
-                    .frame(width: proxy.size.width * 0.74)
-                    .blur(radius: 86)
-                    .offset(
-                        x: drifting ? -proxy.size.width * 0.28 : proxy.size.width * 0.30,
-                        y: drifting ? proxy.size.height * 0.28 : proxy.size.height * 0.10
-                    )
-            }
-            .onAppear {
-                withAnimation(.easeInOut(duration: 11).repeatForever(autoreverses: true)) {
-                    drifting = true
-                }
-            }
+        case .velvet:
+            [Color.black.opacity(0.18), Color.black.opacity(0.64)]
+        case .midnight:
+            [Color.black.opacity(0.12), Color.black.opacity(0.62)]
         }
     }
 }
@@ -181,11 +188,7 @@ struct MafiaCard: ViewModifier {
             .padding(padding)
             .background {
                 RoundedRectangle(cornerRadius: theme.cornerRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: theme.cornerRadius, style: .continuous)
-                            .fill(theme.palette.surface)
-                    }
+                    .fill(theme.palette.surface)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: theme.cornerRadius, style: .continuous)

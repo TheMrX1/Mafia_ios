@@ -18,17 +18,15 @@ struct RootView: View {
                     case .reveal:
                         RoleRevealView()
                     case .day:
-                        DayView()
+                        HostView()
                     case .vote:
-                        VoteView()
+                        HostView()
                     case .night:
-                        NightView()
+                        HostView()
                     case .summary:
                         SummaryView()
                     }
                 }
-                .id(game.phase)
-                .transition(.premiumScene)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 if game.phase != .reveal {
@@ -39,7 +37,6 @@ struct RootView: View {
                             .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(game.theme.palette.text)
                             .frame(width: 38, height: 38)
-                            .background(.ultraThinMaterial)
                             .background(game.theme.palette.surface)
                             .clipShape(Circle())
                             .overlay {
@@ -55,7 +52,6 @@ struct RootView: View {
                 }
             }
         }
-        .animation(.spring(response: 0.62, dampingFraction: 0.86), value: game.phase)
         .preferredColorScheme(game.theme.palette.prefersDark ? .dark : .light)
         .sensoryFeedback(.selection, trigger: game.phase)
         .sheet(isPresented: $settingsPresented) {

@@ -50,6 +50,7 @@ struct SetupView: View {
             .padding(.bottom, 52)
         }
         .scrollDismissesKeyboard(.interactively)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 
     private var modeSelector: some View {

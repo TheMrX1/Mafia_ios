@@ -6,50 +6,53 @@ struct SetupView: View {
     @State private var namesExpanded = false
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 20) {
-                ScreenHeader(
-                    "Private club",
-                    title: "Город засыпает",
-                    subtitle: "Создайте партию. Остальное приложение возьмёт на себя."
-                )
+        GeometryReader { viewport in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 20) {
+                    ScreenHeader(
+                        "Private club",
+                        title: "Создание игры",
+                        subtitle: nil
+                    )
 
-                modeSelector
+                    modeSelector
 
-                if game.mode == .classic {
-                    playerCountCard
-                }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    SectionLabel("Сценарий", detail: "\(game.configurations.count) вариантов")
-                    ForEach(game.configurations) { config in
-                        Button {
-                            game.selectedConfigurationID = config.id
-                        } label: {
-                            ConfigurationRow(
-                                configuration: config,
-                                selected: game.selectedConfiguration.id == config.id
-                            )
-                        }
-                        .buttonStyle(.plain)
+                    if game.mode == .classic {
+                        playerCountCard
                     }
-                }
 
-                namesCard
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionLabel("Сценарий", detail: "\(game.configurations.count) вариантов")
+                        ForEach(game.configurations) { config in
+                            Button {
+                                game.selectedConfigurationID = config.id
+                            } label: {
+                                ConfigurationRow(
+                                    configuration: config,
+                                    selected: game.selectedConfiguration.id == config.id
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
 
-                Button {
-                    game.prepareGame()
-                } label: {
-                    Label("Перейти к правилам", systemImage: "arrow.right")
+                    namesCard
+
+                    Button {
+                        game.prepareGame()
+                    } label: {
+                        Label("Перейти к правилам", systemImage: "arrow.right")
+                    }
+                    .buttonStyle(LuxuryButtonStyle(theme: game.theme))
                 }
-                .buttonStyle(LuxuryButtonStyle(theme: game.theme))
+                .contentColumn()
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+                .padding(.bottom, 52)
             }
-            .contentColumn()
-            .padding(.horizontal, 20)
-            .padding(.top, 18)
-            .padding(.bottom, 52)
+            .frame(width: viewport.size.width, height: viewport.size.height)
+            .scrollDismissesKeyboard(.interactively)
         }
-        .scrollDismissesKeyboard(.interactively)
         .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 

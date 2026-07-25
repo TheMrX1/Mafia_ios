@@ -63,12 +63,10 @@ struct SettingsView: View {
         .presentationBackground(.clear)
         .fileImporter(
             isPresented: $importerPresented,
-            allowedContentTypes: [.audio],
+            allowedContentTypes: [.mp3, .audio],
             allowsMultipleSelection: false
         ) { result in
-            if case let .success(urls) = result, let url = urls.first {
-                music.importTrack(from: url)
-            }
+            music.handleImportResult(result)
         }
     }
 
@@ -230,6 +228,13 @@ struct SettingsView: View {
             }
             .buttonStyle(.bordered)
             .tint(game.theme.palette.accent)
+
+            if let error = music.errorMessage {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .mafiaCard(game.theme)
     }

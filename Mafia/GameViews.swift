@@ -666,12 +666,10 @@ struct NightView: View {
         }
         .fileImporter(
             isPresented: $importerPresented,
-            allowedContentTypes: [.audio],
+            allowedContentTypes: [.mp3, .audio],
             allowsMultipleSelection: false
         ) { result in
-            if case let .success(urls) = result, let url = urls.first {
-                music.importTrack(from: url)
-            }
+            music.handleImportResult(result)
         }
     }
 

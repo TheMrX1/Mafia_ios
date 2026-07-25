@@ -117,6 +117,7 @@ struct ThemedBackground<Content: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .foregroundStyle(theme.palette.text)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 
     private var backgroundOverlay: [Color] {
@@ -364,13 +365,14 @@ struct CardBackView: View {
                 .padding(9)
 
             GeometryReader { proxy in
-                let side = min(proxy.size.width * 0.39, 84)
+                let side = min(proxy.size.width * logoScale, 76)
 
                 GameLogoMark(color: logoColor)
                     .frame(width: side, height: side)
+                    .clipShape(Circle())
                     .position(
                         x: proxy.size.width / 2,
-                        y: proxy.size.height * 0.52
+                        y: proxy.size.height * logoVerticalPosition
                     )
             }
         }
@@ -429,6 +431,34 @@ struct CardBackView: View {
             Color(red: 0.96, green: 0.72, blue: 0.28)
         case .neonCircuit:
             Color(red: 0.27, green: 0.91, blue: 1)
+        }
+    }
+
+    private var logoScale: CGFloat {
+        switch skin {
+        case .classic:
+            0.23
+        case .obsidian:
+            0.17
+        case .neonCircuit:
+            0.23
+        case .ukiyoE:
+            0.29
+        case .evidence:
+            0.20
+        }
+    }
+
+    private var logoVerticalPosition: CGFloat {
+        switch skin {
+        case .classic, .neonCircuit:
+            0.52
+        case .obsidian:
+            0.55
+        case .ukiyoE:
+            0.51
+        case .evidence:
+            0.50
         }
     }
 }

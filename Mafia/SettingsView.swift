@@ -20,6 +20,7 @@ struct SettingsView: View {
                         )
 
                         themeSection
+                        cardSkinSection
                         timerSection
                         musicSection
                     }
@@ -36,7 +37,6 @@ struct SettingsView: View {
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(game.theme.palette.text)
                         .frame(width: 38, height: 38)
-                        .background(.ultraThinMaterial)
                         .background(game.theme.palette.surface)
                         .clipShape(Circle())
                         .overlay {
@@ -60,6 +60,46 @@ struct SettingsView: View {
                 music.importTrack(from: url)
             }
         }
+    }
+
+    private var cardSkinSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionLabel("Рубашка карты")
+            HStack(spacing: 10) {
+                ForEach(CardSkin.allCases) { skin in
+                    Button {
+                        withAnimation(.easeOut(duration: 0.18)) {
+                            game.cardSkin = skin
+                        }
+                    } label: {
+                        VStack(spacing: 10) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(game.theme.palette.elevatedSurface)
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(game.theme.palette.accent.opacity(0.55), lineWidth: 1)
+                                Image(systemName: skin.symbol)
+                                    .font(.title2)
+                                    .foregroundStyle(game.theme.palette.accent)
+                            }
+                            .frame(height: 74)
+                            Text(skin.title)
+                                .font(.caption.weight(.semibold))
+                                .lineLimit(1)
+                        }
+                        .padding(8)
+                        .background(
+                            game.cardSkin == skin
+                                ? game.theme.palette.accent.opacity(0.12)
+                                : Color.clear
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .mafiaCard(game.theme)
     }
 
     private var themeSection: some View {
@@ -164,6 +204,8 @@ struct SettingsView: View {
         case .neonNoir: "Ночной город, стекло и холодный неон"
         case .artDeco: "Изумруд, латунь и атмосфера закрытого клуба"
         case .minimal: "Светлая редакционная эстетика и тишина"
+        case .velvet: "Бордовый бархат и тёплое старое золото"
+        case .midnight: "Глубокий синий, стекло и ночной город"
         }
     }
 }

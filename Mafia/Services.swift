@@ -13,8 +13,12 @@ final class DayCountdown: ObservableObject {
     }
 
     func reset(minutes: Int) {
+        reset(seconds: minutes * 60)
+    }
+
+    func reset(seconds: Int) {
         stop()
-        remaining = minutes * 60
+        remaining = max(1, seconds)
     }
 
     func toggle(tone: EndTone) {

@@ -134,15 +134,9 @@ struct RoleRevealView: View {
     private var secretCard: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(.ultraThinMaterial)
-
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [
-                            game.theme.palette.elevatedSurface,
-                            game.theme.palette.background.opacity(0.96)
-                        ],
+                        colors: cardColors,
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -152,8 +146,8 @@ struct RoleRevealView: View {
                 .stroke(
                     LinearGradient(
                         colors: [
-                            game.theme.palette.accent.opacity(0.92),
-                            game.theme.palette.accent.opacity(0.18),
+                            cardAccent.opacity(0.92),
+                            cardAccent.opacity(0.18),
                             game.theme.palette.secondaryAccent.opacity(0.46)
                         ],
                         startPoint: .topLeading,
@@ -167,17 +161,17 @@ struct RoleRevealView: View {
                 .padding(10)
 
             VStack(spacing: 18) {
-                Image(systemName: "crown.fill")
+                Image(systemName: game.cardSkin.symbol)
                     .font(.system(size: 20, weight: .medium))
 
                 ZStack {
                     Circle()
-                        .stroke(game.theme.palette.accent.opacity(0.24), lineWidth: 1)
+                        .stroke(cardAccent.opacity(0.24), lineWidth: 1)
                         .frame(width: 92, height: 92)
                     Circle()
-                        .stroke(game.theme.palette.accent.opacity(0.12), lineWidth: 1)
+                        .stroke(cardAccent.opacity(0.12), lineWidth: 1)
                         .frame(width: 68, height: 68)
-                    Image(systemName: "suit.spade.fill")
+                    Image(systemName: game.cardSkin.symbol)
                         .font(.system(size: 38, weight: .light))
                 }
 
@@ -191,7 +185,7 @@ struct RoleRevealView: View {
                         .opacity(0.62)
                 }
             }
-            .foregroundStyle(game.theme.palette.accent)
+            .foregroundStyle(cardAccent)
 
             LinearGradient(
                 colors: [.clear, Color.white.opacity(0.20), .clear],
@@ -200,20 +194,20 @@ struct RoleRevealView: View {
             )
             .frame(width: 70)
             .rotationEffect(.degrees(22))
-            .offset(x: cardIsFloating ? 170 : -170)
+            .offset(x: cardIsFloating ? 120 : -170)
             .mask {
                 RoundedRectangle(cornerRadius: 28, style: .continuous)
             }
         }
         .frame(width: 218, height: 292)
         .rotation3DEffect(
-            .degrees(cardIsFloating ? -2.4 : 2.4),
+            .degrees(cardIsFloating ? -1.4 : 0),
             axis: (x: 0.18, y: 1, z: 0),
             perspective: 0.72
         )
-        .offset(y: cardIsFloating ? -5 : 5)
+        .offset(y: cardIsFloating ? -3 : 0)
         .shadow(
-            color: game.theme.palette.accent.opacity(cardIsFloating ? 0.25 : 0.14),
+            color: cardAccent.opacity(cardIsFloating ? 0.25 : 0.14),
             radius: cardIsFloating ? 34 : 22,
             y: 18
         )
@@ -221,8 +215,27 @@ struct RoleRevealView: View {
     }
 
     private func startCardMotion() {
-        withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+        withAnimation(.easeOut(duration: 0.55)) {
             cardIsFloating = true
+        }
+    }
+
+    private var cardColors: [Color] {
+        switch game.cardSkin {
+        case .crown:
+            [game.theme.palette.elevatedSurface, game.theme.palette.background.opacity(0.98)]
+        case .monogram:
+            [Color(red: 0.12, green: 0.13, blue: 0.17), Color(red: 0.015, green: 0.018, blue: 0.028)]
+        case .eclipse:
+            [Color(red: 0.12, green: 0.035, blue: 0.18), Color(red: 0.018, green: 0.008, blue: 0.035)]
+        }
+    }
+
+    private var cardAccent: Color {
+        switch game.cardSkin {
+        case .crown: game.theme.palette.accent
+        case .monogram: Color(red: 0.80, green: 0.84, blue: 0.90)
+        case .eclipse: Color(red: 0.52, green: 0.88, blue: 1)
         }
     }
 

@@ -1,11 +1,8 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var game: GameSession
-    @EnvironmentObject private var music: NightMusic
-    @State private var importerPresented = false
 
     private let twoColumns = [
         GridItem(.flexible(), spacing: 10),
@@ -31,7 +28,6 @@ struct SettingsView: View {
                         wallpaperSection
                         roleSkinSection
                         cardSkinSection
-                        musicSection
                     }
                     .contentColumn()
                     .padding(.horizontal, 20)
@@ -61,13 +57,6 @@ struct SettingsView: View {
         }
         .preferredColorScheme(.dark)
         .presentationBackground(.clear)
-        .fileImporter(
-            isPresented: $importerPresented,
-            allowedContentTypes: [.mp3, .audio],
-            allowsMultipleSelection: false
-        ) { result in
-            music.handleImportResult(result)
-        }
     }
 
     private var wallpaperSection: some View {
@@ -209,35 +198,6 @@ struct SettingsView: View {
         }
     }
 
-    private var musicSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionLabel("Музыка ночи")
-
-            if let track = music.trackName {
-                Label(track, systemImage: "music.note")
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(2)
-            } else {
-                Text("Трек пока не выбран.")
-                    .font(.subheadline)
-                    .foregroundStyle(game.theme.palette.secondaryText)
-            }
-
-            Button(music.trackName == nil ? "Импортировать из Файлов" : "Заменить трек") {
-                importerPresented = true
-            }
-            .buttonStyle(.bordered)
-            .tint(game.theme.palette.accent)
-
-            if let error = music.errorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .mafiaCard(game.theme)
-    }
 }
 
 private struct SettingsTileButtonStyle: ButtonStyle {

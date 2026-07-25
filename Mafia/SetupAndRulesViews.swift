@@ -240,7 +240,7 @@ struct RulesView: View {
                         number: "03",
                         icon: "moon.stars.fill",
                         title: "Проведите ночь",
-                        text: "Включите музыку, выполните действия ролей и отметьте выбывших."
+                        text: "Выполните действия ролей и отметьте выбывших."
                     )
                 }
                 .mafiaCard(game.theme, padding: 4)

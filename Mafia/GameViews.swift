@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct RoleRevealView: View {
     @EnvironmentObject private var game: GameSession
@@ -635,9 +634,7 @@ struct VoteView: View {
 
 struct NightView: View {
     @EnvironmentObject private var game: GameSession
-    @EnvironmentObject private var music: NightMusic
     @State private var eliminated: Set<UUID> = []
-    @State private var importerPresented = false
 
     var body: some View {
         ScrollView {
@@ -645,14 +642,12 @@ struct NightView: View {
                 ScreenHeader(
                     "Ночь \(game.round)",
                     title: "Город засыпает",
-                    subtitle: "Скройте разговоры музыкой и проведите ночные действия."
+                    subtitle: "Проведите ночные действия и отметьте выбывших."
                 )
 
-                musicCard
                 eliminationCard
 
                 Button {
-                    music.stop()
                     game.finishNight(eliminatedIDs: eliminated)
                 } label: {
                     Label("Начать новый день", systemImage: "sun.max.fill")
@@ -664,62 +659,6 @@ struct NightView: View {
             .padding(.top, 18)
             .padding(.bottom, 52)
         }
-        .fileImporter(
-            isPresented: $importerPresented,
-            allowedContentTypes: [.mp3, .audio],
-            allowsMultipleSelection: false
-        ) { result in
-            music.handleImportResult(result)
-        }
-    }
-
-    private var musicCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            SectionLabel("Музыка ночи", detail: music.isPlaying ? "играет" : nil)
-
-            if let track = music.trackName {
-                HStack(spacing: 14) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(game.theme.palette.accent.opacity(0.14))
-                        Image(systemName: "waveform")
-                            .foregroundStyle(game.theme.palette.accent)
-                            .symbolEffect(.variableColor.iterative, isActive: music.isPlaying)
-                    }
-                    .frame(width: 52, height: 52)
-
-                    Text(track)
-                        .font(.subheadline.weight(.semibold))
-                        .lineLimit(2)
-                    Spacer()
-                    Button {
-                        music.toggle()
-                    } label: {
-                        Image(systemName: music.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 38))
-                            .foregroundStyle(game.theme.palette.accent)
-                    }
-                }
-            } else {
-                Text("Добавьте спокойный трек — он скроет звуки ночных перемещений.")
-                    .font(.subheadline)
-                    .foregroundStyle(game.theme.palette.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Button(music.trackName == nil ? "Выбрать из Файлов" : "Заменить трек") {
-                importerPresented = true
-            }
-            .buttonStyle(.bordered)
-            .tint(game.theme.palette.accent)
-
-            if let error = music.errorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-        }
-        .mafiaCard(game.theme)
     }
 
     private var eliminationCard: some View {

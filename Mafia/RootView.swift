@@ -3,7 +3,6 @@ import SwiftUI
 struct RootView: View {
     @EnvironmentObject private var game: GameSession
     @EnvironmentObject private var dayTimer: DayCountdown
-    @EnvironmentObject private var music: NightMusic
     @State private var settingsPresented = false
 
     var body: some View {
@@ -61,7 +60,6 @@ struct RootView: View {
             SettingsView()
                 .environmentObject(game)
                 .environmentObject(dayTimer)
-                .environmentObject(music)
         }
     }
 }

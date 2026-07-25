@@ -33,8 +33,8 @@ final class DayCountdown: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] timer in
             Task { @MainActor in
                 guard let self else { return }
-                remaining -= 1
-                if remaining <= 0 {
+                self.remaining -= 1
+                if self.remaining <= 0 {
                     timer.invalidate()
                     self.timer = nil
                     self.isRunning = false
@@ -101,6 +101,6 @@ final class NightMusic: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        Task { @MainActor in isPlaying = false }
+        Task { @MainActor in self.isPlaying = false }
     }
 }

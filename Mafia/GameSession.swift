@@ -12,6 +12,7 @@ final class GameSession: ObservableObject {
     @Published var phase: GamePhase = .setup
     @Published var mode: GameMode = .sport
     @Published var theme: AppTheme = .neonNoir
+    @Published var cardSkin: CardSkin = .crown
     @Published var playerCount = 10
     @Published var playerNames = (1...10).map { "Игрок \($0)" }
     @Published var selectedConfigurationID = GameConfiguration.sport.id
@@ -152,6 +153,14 @@ final class GameSession: ObservableObject {
         }
         round += 1
         phase = evaluateWinner() ? .summary : .day
+    }
+
+    func eliminate(_ id: UUID) {
+        guard let index = players.firstIndex(where: { $0.id == id }) else { return }
+        players[index].isAlive = false
+        if evaluateWinner() {
+            phase = .summary
+        }
     }
 
     func resetGame() {

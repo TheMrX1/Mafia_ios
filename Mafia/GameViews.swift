@@ -4,39 +4,33 @@ import UniformTypeIdentifiers
 
 struct RoleRevealView: View {
     @EnvironmentObject private var game: GameSession
+    @State private var dossierExpanded = false
+    @State private var cardIsFloating = false
 
     var body: some View {
         let player = game.players[game.revealIndex]
 
-        ScrollView {
-            VStack(spacing: 22) {
-                HStack {
-                    Text("КАРТА \(game.revealIndex + 1) ИЗ \(game.players.count)")
-                        .font(.system(size: 10, weight: .black, design: .rounded))
-                        .tracking(2.2)
-                        .foregroundStyle(game.theme.palette.secondaryText)
-                    Spacer()
-                    Text(String(format: "%02d", player.number))
-                        .font(.caption.monospacedDigit().bold())
-                        .foregroundStyle(game.theme.palette.accent)
-                }
+        VStack(spacing: 0) {
+            revealHeader(player)
+                .padding(.horizontal, 22)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
 
+            ZStack {
                 if game.revealIsOpen {
                     revealedRole(player)
-                        .transition(.scale(scale: 0.96).combined(with: .opacity))
+                        .transition(.secretCardReveal)
                 } else {
                     privacyScreen(player)
-                        .transition(.opacity)
+                        .id(player.id)
+                        .transition(.secretCardReveal)
                 }
             }
-            .contentColumn()
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 116)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .safeAreaInset(edge: .bottom) {
             Button {
-                withAnimation(.snappy) {
+                withAnimation(.spring(response: 0.66, dampingFraction: 0.82)) {
                     if game.revealIsOpen {
                         game.closeRoleAndContinue()
                     } else {
@@ -49,112 +43,265 @@ struct RoleRevealView: View {
                     systemImage: game.revealIsOpen ? "eye.slash.fill" : "eye.fill"
                 )
             }
-            .primaryButton(game.theme)
+            .buttonStyle(LuxuryButtonStyle(theme: game.theme))
             .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
-            .background(.ultraThinMaterial)
+            .padding(.top, 18)
+            .padding(.bottom, 6)
+            .background {
+                LinearGradient(
+                    colors: [.clear, game.theme.palette.background.opacity(0.92)],
+                    startPoint: .top,
+                    endPoint: .center
+                )
+                .ignoresSafeArea()
+            }
+        }
+        .sensoryFeedback(.impact(weight: .medium), trigger: game.revealIsOpen)
+        .onChange(of: game.revealIndex) {
+            dossierExpanded = false
+            cardIsFloating = false
+            DispatchQueue.main.async {
+                startCardMotion()
+            }
+        }
+    }
+
+    private func revealHeader(_ player: GamePlayer) -> some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 7) {
+                ForEach(0..<game.players.count, id: \.self) { index in
+                    Capsule()
+                        .fill(
+                            index <= game.revealIndex
+                                ? game.theme.palette.accent
+                                : game.theme.palette.border
+                        )
+                        .frame(width: index == game.revealIndex ? 22 : 7, height: 4)
+                }
+            }
+            .animation(.spring(response: 0.44, dampingFraction: 0.78), value: game.revealIndex)
+
+            Spacer()
+
+            Text("\(game.revealIndex + 1)/\(game.players.count)")
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .foregroundStyle(game.theme.palette.secondaryText)
+
+            Text(String(format: "%02d", player.number))
+                .font(.caption.monospacedDigit().bold())
+                .foregroundStyle(game.theme.palette.accent)
         }
     }
 
     private func privacyScreen(_ player: GamePlayer) -> some View {
-        VStack(spacing: 22) {
-            Spacer(minLength: 40)
+        VStack(spacing: 0) {
+            Spacer(minLength: 16)
 
-            ZStack {
-                Circle()
-                    .fill(game.theme.palette.accent.opacity(0.12))
-                    .frame(width: 150, height: 150)
-                Circle()
-                    .stroke(game.theme.palette.accent.opacity(0.28), lineWidth: 1)
-                    .frame(width: 126, height: 126)
-                Image(systemName: "hand.raised.fill")
-                    .font(.system(size: 50, weight: .light))
-                    .foregroundStyle(game.theme.palette.accent)
-            }
+            VStack(spacing: 10) {
+                Text("ПЕРЕДАЙТЕ ТЕЛЕФОН")
+                    .font(.system(size: 10, weight: .black, design: .rounded))
+                    .tracking(2.8)
+                    .foregroundStyle(game.theme.palette.secondaryText)
 
-            VStack(spacing: 8) {
-                Text("Передайте телефон")
-                    .font(.system(size: 34, weight: .bold, design: .serif))
-                    .multilineTextAlignment(.center)
                 Text(player.displayName)
-                    .font(.title3.bold())
-                    .foregroundStyle(game.theme.palette.accent)
-                Text("Продолжайте, только когда никто другой не видит экран.")
-                    .font(.subheadline)
+                    .font(.system(size: 38, weight: .bold, design: .serif))
+                    .multilineTextAlignment(.center)
+
+                Text("Карту должен видеть только этот игрок")
+                    .font(.callout)
                     .foregroundStyle(game.theme.palette.secondaryText)
                     .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 4)
             }
 
-            HStack(spacing: 9) {
-                Image(systemName: "lock.fill")
-                Text("Роль скрыта")
-            }
-            .font(.caption.bold())
-            .padding(.horizontal, 14)
-            .padding(.vertical, 9)
-            .background(game.theme.palette.elevatedSurface)
-            .clipShape(Capsule())
+            Spacer(minLength: 18)
 
-            Spacer(minLength: 40)
+            secretCard
+
+            Spacer(minLength: 18)
+
+            Label("КОСНИТЕСЬ КНОПКИ, ЧТОБЫ ОТКРЫТЬ", systemImage: "lock.fill")
+                .font(.system(size: 9, weight: .black, design: .rounded))
+                .tracking(1.25)
+                .foregroundStyle(game.theme.palette.accent)
         }
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 560)
-        .mafiaCard(game.theme)
+        .padding(.horizontal, 28)
+        .onAppear {
+            startCardMotion()
+        }
+    }
+
+    private var secretCard: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(.ultraThinMaterial)
+
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            game.theme.palette.elevatedSurface,
+                            game.theme.palette.background.opacity(0.96)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            game.theme.palette.accent.opacity(0.92),
+                            game.theme.palette.accent.opacity(0.18),
+                            game.theme.palette.secondaryAccent.opacity(0.46)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.4
+                )
+
+            RoundedRectangle(cornerRadius: 21, style: .continuous)
+                .stroke(game.theme.palette.border.opacity(0.86), lineWidth: 0.8)
+                .padding(10)
+
+            VStack(spacing: 18) {
+                Image(systemName: "crown.fill")
+                    .font(.system(size: 20, weight: .medium))
+
+                ZStack {
+                    Circle()
+                        .stroke(game.theme.palette.accent.opacity(0.24), lineWidth: 1)
+                        .frame(width: 92, height: 92)
+                    Circle()
+                        .stroke(game.theme.palette.accent.opacity(0.12), lineWidth: 1)
+                        .frame(width: 68, height: 68)
+                    Image(systemName: "suit.spade.fill")
+                        .font(.system(size: 38, weight: .light))
+                }
+
+                VStack(spacing: 5) {
+                    Text("MAFIA")
+                        .font(.system(size: 17, weight: .black, design: .serif))
+                        .tracking(5.2)
+                    Text("PRIVATE GAME")
+                        .font(.system(size: 8, weight: .bold, design: .rounded))
+                        .tracking(2.1)
+                        .opacity(0.62)
+                }
+            }
+            .foregroundStyle(game.theme.palette.accent)
+
+            LinearGradient(
+                colors: [.clear, Color.white.opacity(0.20), .clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(width: 70)
+            .rotationEffect(.degrees(22))
+            .offset(x: cardIsFloating ? 170 : -170)
+            .mask {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+            }
+        }
+        .frame(width: 218, height: 292)
+        .rotation3DEffect(
+            .degrees(cardIsFloating ? -2.4 : 2.4),
+            axis: (x: 0.18, y: 1, z: 0),
+            perspective: 0.72
+        )
+        .offset(y: cardIsFloating ? -5 : 5)
+        .shadow(
+            color: game.theme.palette.accent.opacity(cardIsFloating ? 0.25 : 0.14),
+            radius: cardIsFloating ? 34 : 22,
+            y: 18
+        )
+        .accessibilityHidden(true)
+    }
+
+    private func startCardMotion() {
+        withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+            cardIsFloating = true
+        }
     }
 
     private func revealedRole(_ player: GamePlayer) -> some View {
-        VStack(spacing: 18) {
-            RoleArtwork(role: player.role, height: 310)
+        ScrollView {
+            VStack(spacing: 14) {
+                RoleArtwork(role: player.role, height: 286)
                 .overlay(alignment: .bottomLeading) {
-                    VStack(alignment: .leading, spacing: 5) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(player.role.team.title)
                             .font(.system(size: 10, weight: .black, design: .rounded))
                             .tracking(2)
                             .foregroundStyle(game.theme.palette.accent)
                         Text(player.role.name)
-                            .font(.system(size: 36, weight: .bold, design: .serif))
+                            .font(.system(size: 34, weight: .bold, design: .serif))
                     }
-                    .padding(20)
+                    .padding(18)
                 }
+                .shadow(color: .black.opacity(0.26), radius: 24, y: 12)
 
-            VStack(alignment: .leading, spacing: 18) {
-                Text(player.role.summary)
-                    .font(.title3.weight(.semibold))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Divider().overlay(game.theme.palette.border)
-
-                dossierSection("ВАША ЗАДАЧА", text: player.role.details)
-
-                if let action = player.role.nightAction {
-                    HStack(alignment: .top, spacing: 12) {
-                        Image(systemName: "moon.stars.fill")
+                VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("ВАША ЦЕЛЬ")
+                            .font(.system(size: 9, weight: .black, design: .rounded))
+                            .tracking(1.5)
                             .foregroundStyle(game.theme.palette.accent)
-                            .frame(width: 24)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("ДЕЙСТВИЕ НОЧЬЮ")
-                                .font(.system(size: 10, weight: .black, design: .rounded))
-                                .tracking(1.4)
-                                .foregroundStyle(game.theme.palette.secondaryText)
+                        Text(player.role.objective)
+                            .font(.headline)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    if let action = player.role.nightAction {
+                        HStack(spacing: 10) {
+                            Image(systemName: "moon.stars.fill")
+                                .foregroundStyle(game.theme.palette.accent)
                             Text(action)
                                 .font(.subheadline.weight(.semibold))
-                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 0)
                         }
+                        .padding(12)
+                        .background(game.theme.palette.accent.opacity(0.10))
+                        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
                     }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(game.theme.palette.accent.opacity(0.10))
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
 
-                dossierSection("ТАКТИКА", text: player.role.strategy)
+                    Button {
+                        withAnimation(.spring(response: 0.46, dampingFraction: 0.84)) {
+                            dossierExpanded.toggle()
+                        }
+                    } label: {
+                        HStack {
+                            Text(dossierExpanded ? "Скрыть досье" : "Полное досье")
+                                .font(.subheadline.weight(.semibold))
+                            Spacer()
+                            Image(systemName: "chevron.down")
+                                .font(.caption.bold())
+                                .rotationEffect(.degrees(dossierExpanded ? 180 : 0))
+                        }
+                        .foregroundStyle(game.theme.palette.secondaryText)
+                    }
+                    .buttonStyle(.plain)
+
+                    if dossierExpanded {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Divider().overlay(game.theme.palette.border)
+                            dossierSection("О РОЛИ", text: player.role.summary)
+                            dossierSection("ПРАВИЛА", text: player.role.details)
+                            dossierSection("ТАКТИКА", text: player.role.strategy)
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .mafiaCard(game.theme, padding: 15)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .mafiaCard(game.theme)
+            .contentColumn()
+            .padding(.horizontal, 20)
+            .padding(.bottom, 22)
         }
+        .scrollIndicators(.hidden)
     }
 
     private func dossierSection(_ title: String, text: String) -> some View {
@@ -168,6 +315,38 @@ struct RoleRevealView: View {
                 .foregroundStyle(game.theme.palette.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+}
+
+private struct SecretCardTurn: ViewModifier {
+    let angle: Double
+    let opacity: Double
+    let scale: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(opacity)
+            .scaleEffect(scale)
+            .rotation3DEffect(
+                .degrees(angle),
+                axis: (x: 0.08, y: 1, z: 0),
+                perspective: 0.68
+            )
+    }
+}
+
+private extension AnyTransition {
+    static var secretCardReveal: AnyTransition {
+        .asymmetric(
+            insertion: .modifier(
+                active: SecretCardTurn(angle: 78, opacity: 0, scale: 0.94),
+                identity: SecretCardTurn(angle: 0, opacity: 1, scale: 1)
+            ),
+            removal: .modifier(
+                active: SecretCardTurn(angle: -78, opacity: 0, scale: 0.94),
+                identity: SecretCardTurn(angle: 0, opacity: 1, scale: 1)
+            )
+        )
     }
 }
 
@@ -225,11 +404,16 @@ struct DayView: View {
 
                 VStack(alignment: .leading, spacing: 12) {
                     SectionLabel("Состав стола", detail: "\(game.alivePlayers.count) в игре")
-                    ForEach(game.players) { player in
-                        PlayerStatusRow(player: player)
+                    LazyVGrid(
+                        columns: [GridItem(.flexible()), GridItem(.flexible())],
+                        spacing: 8
+                    ) {
+                        ForEach(game.players) { player in
+                            PlayerStatusRow(player: player)
+                        }
                     }
                 }
-                .mafiaCard(game.theme)
+                .mafiaCard(game.theme, padding: 14)
 
                 Button {
                     dayTimer.stop()
@@ -237,7 +421,7 @@ struct DayView: View {
                 } label: {
                     Label("Начать голосование", systemImage: "checkmark.seal.fill")
                 }
-                .primaryButton(game.theme)
+                .buttonStyle(LuxuryButtonStyle(theme: game.theme))
             }
             .contentColumn()
             .padding(.horizontal, 20)
@@ -257,21 +441,24 @@ private struct PlayerStatusRow: View {
     let player: GamePlayer
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             Text(String(format: "%02d", player.number))
-                .font(.caption.monospacedDigit().bold())
+                .font(.caption2.monospacedDigit().bold())
                 .foregroundStyle(player.isAlive ? game.theme.palette.accent : game.theme.palette.secondaryText)
-                .frame(width: 26)
+                .frame(width: 22)
             Text(player.displayName)
-                .font(.subheadline.weight(.semibold))
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
                 .strikethrough(!player.isAlive)
             Spacer()
-            Text(player.isAlive ? "В ИГРЕ" : "ВЫБЫЛ")
-                .font(.system(size: 9, weight: .black, design: .rounded))
-                .tracking(1)
-                .foregroundStyle(player.isAlive ? game.theme.palette.secondaryAccent : game.theme.palette.secondaryText)
+            Circle()
+                .fill(player.isAlive ? game.theme.palette.secondaryAccent : game.theme.palette.secondaryText)
+                .frame(width: 6, height: 6)
         }
-        .padding(.vertical, 7)
+        .padding(.horizontal, 9)
+        .frame(minHeight: 38)
+        .background(game.theme.palette.elevatedSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
         .opacity(player.isAlive ? 1 : 0.48)
     }
 }
@@ -303,7 +490,7 @@ struct VoteView: View {
                     } label: {
                         Label("Подтвердить голос", systemImage: "checkmark")
                     }
-                    .primaryButton(game.theme)
+                    .buttonStyle(LuxuryButtonStyle(theme: game.theme))
                     .disabled(selectedTarget == nil)
                     .opacity(selectedTarget == nil ? 0.48 : 1)
                 } else {
@@ -402,7 +589,7 @@ struct VoteView: View {
                         resultResolved = true
                     }
                 }
-                .primaryButton(game.theme)
+                .buttonStyle(LuxuryButtonStyle(theme: game.theme))
             } else {
                 VStack(spacing: 12) {
                     Image(systemName: "gavel.fill")
@@ -419,7 +606,7 @@ struct VoteView: View {
                 Button("Город засыпает") {
                     game.continueToNight()
                 }
-                .primaryButton(game.theme)
+                .buttonStyle(LuxuryButtonStyle(theme: game.theme))
             }
         }
     }
@@ -449,7 +636,7 @@ struct NightView: View {
                 } label: {
                     Label("Начать новый день", systemImage: "sun.max.fill")
                 }
-                .primaryButton(game.theme)
+                .buttonStyle(LuxuryButtonStyle(theme: game.theme))
             }
             .contentColumn()
             .padding(.horizontal, 20)
@@ -604,7 +791,7 @@ struct SummaryView: View {
                 Button("Новая игра") {
                     game.resetGame()
                 }
-                .primaryButton(game.theme)
+                .buttonStyle(LuxuryButtonStyle(theme: game.theme))
             }
             .contentColumn()
             .padding(.horizontal, 20)

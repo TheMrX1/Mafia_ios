@@ -9,14 +9,14 @@ struct SettingsView: View {
     @State private var importerPresented = false
 
     var body: some View {
-        NavigationStack {
-            ThemedBackground(theme: game.theme) {
+        ThemedBackground(theme: game.theme) {
+            ZStack {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 24) {
+                    LazyVStack(alignment: .leading, spacing: 20) {
                         ScreenHeader(
                             "Control room",
                             title: "Настройки",
-                            subtitle: "Атмосфера, ритм и звук вашей игры."
+                            subtitle: nil
                         )
 
                         themeSection
@@ -28,17 +28,29 @@ struct SettingsView: View {
                     .padding(.top, 18)
                     .padding(.bottom, 48)
                 }
-            }
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Готово") { dismiss() }
-                        .fontWeight(.bold)
-                        .foregroundStyle(game.theme.palette.accent)
+
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(game.theme.palette.text)
+                        .frame(width: 38, height: 38)
+                        .background(.ultraThinMaterial)
+                        .background(game.theme.palette.surface)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle().stroke(game.theme.palette.border, lineWidth: 0.8)
+                        }
                 }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .padding(.top, 8)
+                .padding(.trailing, 18)
             }
-            .toolbarBackground(.hidden, for: .navigationBar)
         }
         .preferredColorScheme(game.theme.palette.prefersDark ? .dark : .light)
+        .presentationBackground(.clear)
         .fileImporter(
             isPresented: $importerPresented,
             allowedContentTypes: [.audio],

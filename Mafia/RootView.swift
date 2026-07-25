@@ -7,8 +7,8 @@ struct RootView: View {
     @State private var settingsPresented = false
 
     var body: some View {
-        NavigationStack {
-            ThemedBackground(theme: game.theme) {
+        ThemedBackground(theme: game.theme) {
+            ZStack {
                 Group {
                     switch game.phase {
                     case .setup:
@@ -27,32 +27,37 @@ struct RootView: View {
                         SummaryView()
                     }
                 }
-                .animation(.snappy, value: game.phase)
+                .id(game.phase)
+                .transition(.premiumScene)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .toolbar {
+
                 if game.phase != .reveal {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            settingsPresented = true
-                        } label: {
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(game.theme.palette.text)
-                                .frame(width: 36, height: 36)
-                                .background(.ultraThinMaterial)
-                                .background(game.theme.palette.surface)
-                                .clipShape(Circle())
-                                .overlay {
-                                    Circle().stroke(game.theme.palette.border, lineWidth: 1)
-                                }
-                        }
-                    }
+                    Button {
+                        settingsPresented = true
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(game.theme.palette.text)
+                            .frame(width: 38, height: 38)
+                            .background(.ultraThinMaterial)
+                            .background(game.theme.palette.surface)
+                            .clipShape(Circle())
+                            .overlay {
+                                Circle().stroke(game.theme.palette.border, lineWidth: 0.8)
+                            }
+                            .shadow(color: .black.opacity(0.14), radius: 12, y: 6)
+                }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(.top, 8)
+                    .padding(.trailing, 18)
+                    .transition(.scale.combined(with: .opacity))
                 }
             }
-            .toolbarBackground(.hidden, for: .navigationBar)
         }
+        .animation(.spring(response: 0.62, dampingFraction: 0.86), value: game.phase)
         .preferredColorScheme(game.theme.palette.prefersDark ? .dark : .light)
+        .sensoryFeedback(.selection, trigger: game.phase)
         .sheet(isPresented: $settingsPresented) {
             SettingsView()
                 .environmentObject(game)

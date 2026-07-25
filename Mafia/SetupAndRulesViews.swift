@@ -3,10 +3,11 @@ import SwiftUI
 
 struct SetupView: View {
     @EnvironmentObject private var game: GameSession
+    @State private var namesExpanded = false
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 26) {
+            LazyVStack(alignment: .leading, spacing: 20) {
                 ScreenHeader(
                     "Private club",
                     title: "Город засыпает",
@@ -44,7 +45,7 @@ struct SetupView: View {
                 } label: {
                     Label("Перейти к правилам", systemImage: "arrow.right")
                 }
-                .primaryButton(game.theme)
+                .buttonStyle(LuxuryButtonStyle(theme: game.theme))
             }
             .contentColumn()
             .padding(.horizontal, 20)
@@ -64,7 +65,7 @@ struct SetupView: View {
                             game.changeMode(mode)
                         }
                     } label: {
-                        VStack(alignment: .leading, spacing: 7) {
+                        VStack(alignment: .leading, spacing: 10) {
                             HStack {
                                 Image(systemName: mode == .sport ? "trophy.fill" : "theatermasks.fill")
                                 Spacer()
@@ -73,13 +74,9 @@ struct SetupView: View {
                             .foregroundStyle(game.mode == mode ? game.theme.palette.accent : game.theme.palette.secondaryText)
                             Text(mode.title)
                                 .font(.headline)
-                            Text(mode == .sport ? "Турнирные правила" : "Роли и сценарии")
-                                .font(.caption)
-                                .foregroundStyle(game.theme.palette.secondaryText)
-                                .fixedSize(horizontal: false, vertical: true)
                         }
-                        .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
-                        .mafiaCard(game.theme, padding: 15)
+                        .frame(maxWidth: .infinity, minHeight: 72, alignment: .topLeading)
+                        .mafiaCard(game.theme, padding: 14)
                         .overlay {
                             if game.mode == mode {
                                 RoundedRectangle(cornerRadius: game.theme.cornerRadius, style: .continuous)
@@ -91,7 +88,7 @@ struct SetupView: View {
                 }
             }
             Text(game.mode.subtitle)
-                .font(.footnote)
+                .font(.caption)
                 .foregroundStyle(game.theme.palette.secondaryText)
         }
     }
@@ -121,31 +118,49 @@ struct SetupView: View {
 
     private var namesCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionLabel("Порядок игроков", detail: "\(game.playerCount)")
-            Text("Телефон будет передаваться сверху вниз.")
-                .font(.footnote)
-                .foregroundStyle(game.theme.palette.secondaryText)
-
-            LazyVStack(spacing: 10) {
-                ForEach(game.playerNames.indices, id: \.self) { index in
-                    HStack(spacing: 12) {
-                        Text(String(format: "%02d", index + 1))
-                            .font(.caption.monospacedDigit().bold())
-                            .foregroundStyle(game.theme.palette.accent)
-                            .frame(width: 26)
-                        TextField("Игрок \(index + 1)", text: $game.playerNames[index])
-                            .textInputAutocapitalization(.words)
-                            .submitLabel(index + 1 == game.playerNames.count ? .done : .next)
+            Button {
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.84)) {
+                    namesExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "person.2.fill")
+                        .foregroundStyle(game.theme.palette.accent)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Имена игроков")
+                            .font(.headline)
+                        Text(namesExpanded ? "Телефон пойдёт сверху вниз" : "\(game.playerCount) мест · можно оставить как есть")
+                            .font(.caption)
+                            .foregroundStyle(game.theme.palette.secondaryText)
                     }
-                    .padding(.horizontal, 14)
-                    .frame(minHeight: 48)
-                    .background(game.theme.palette.elevatedSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(game.theme.palette.border, lineWidth: 1)
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .font(.caption.bold())
+                        .foregroundStyle(game.theme.palette.secondaryText)
+                        .rotationEffect(.degrees(namesExpanded ? 180 : 0))
+                }
+            }
+            .buttonStyle(.plain)
+
+            if namesExpanded {
+                LazyVStack(spacing: 8) {
+                    ForEach(game.playerNames.indices, id: \.self) { index in
+                        HStack(spacing: 10) {
+                            Text(String(format: "%02d", index + 1))
+                                .font(.caption.monospacedDigit().bold())
+                                .foregroundStyle(game.theme.palette.accent)
+                                .frame(width: 24)
+                            TextField("Игрок \(index + 1)", text: $game.playerNames[index])
+                                .textInputAutocapitalization(.words)
+                                .submitLabel(index + 1 == game.playerNames.count ? .done : .next)
+                        }
+                        .padding(.horizontal, 12)
+                        .frame(minHeight: 44)
+                        .background(game.theme.palette.elevatedSurface)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                 }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .mafiaCard(game.theme)
@@ -158,42 +173,34 @@ private struct ConfigurationRow: View {
     let selected: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(configuration.name)
-                        .font(.system(size: 20, weight: .bold, design: .serif))
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(configuration.note)
-                        .font(.subheadline)
-                        .foregroundStyle(game.theme.palette.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 8)
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(configuration.name)
+                    .font(.system(size: 19, weight: .bold, design: .serif))
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(configuration.note)
+                    .font(.caption)
+                    .foregroundStyle(game.theme.palette.secondaryText)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            VStack(alignment: .trailing, spacing: 7) {
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
                     .foregroundStyle(selected ? game.theme.palette.accent : game.theme.palette.secondaryText)
-            }
 
-            HStack(spacing: 3) {
-                ForEach(1...5, id: \.self) { star in
-                    Image(systemName: star <= configuration.stars ? "star.fill" : "star")
-                        .font(.caption2)
+                HStack(spacing: 2) {
+                    ForEach(1...5, id: \.self) { star in
+                        Circle()
+                            .fill(star <= configuration.stars ? game.theme.palette.accent : game.theme.palette.border)
+                            .frame(width: 5, height: 5)
+                    }
                 }
-                Text("сложность")
-                    .font(.caption)
-                    .padding(.leading, 5)
             }
-            .foregroundStyle(game.theme.palette.accent)
-
-            Divider().overlay(game.theme.palette.border)
-
-            Text(configuration.roleSummary)
-                .font(.caption)
-                .foregroundStyle(game.theme.palette.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
         }
-        .mafiaCard(game.theme)
+        .mafiaCard(game.theme, padding: 14)
         .overlay {
             if selected {
                 RoundedRectangle(cornerRadius: game.theme.cornerRadius, style: .continuous)
@@ -208,7 +215,7 @@ struct RulesView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 24) {
+            LazyVStack(alignment: .leading, spacing: 20) {
                 ScreenHeader(
                     "Брифинг",
                     title: "Перед началом",
@@ -222,31 +229,34 @@ struct RulesView: View {
                         number: "01",
                         icon: "rectangle.portrait.and.arrow.right",
                         title: "Получите роль",
-                        text: "Передавайте iPhone по кругу. Каждый игрок открывает только свою карточку и скрывает её перед передачей."
+                        text: "Передавайте iPhone по кругу. Каждый видит только свою карту."
                     )
                     RuleDivider()
                     RuleBlock(
                         number: "02",
                         icon: "quote.bubble.fill",
-                        title: "Обсуждайте днём",
-                        text: game.mode == .sport
-                            ? "Говорите по очереди, используйте таймер, выдвигайте кандидатов и голосуйте. Следите не только за словами, но и за решениями игроков."
-                            : "Обсуждайте поведение игроков, делитесь подозрениями и голосуйте за исключение. У каждой роли своя цель, но днём все выглядят одинаково."
+                        title: "Обсудите",
+                        text: "Днём ищите противоречия, выдвигайте кандидатов и голосуйте."
                     )
                     RuleDivider()
                     RuleBlock(
                         number: "03",
                         icon: "moon.stars.fill",
-                        title: "Действуйте ночью",
-                        text: "Включите музыку, закройте глаза и последовательно выполните действия ролей. После ночи отметьте выбывших в приложении."
+                        title: "Проведите ночь",
+                        text: "Включите музыку, выполните действия ролей и отметьте выбывших."
                     )
                 }
                 .mafiaCard(game.theme, padding: 4)
 
-                VStack(alignment: .leading, spacing: 14) {
-                    SectionLabel("Досье ролей", detail: "\(uniqueRoles.count)")
-                    ForEach(uniqueRoles) { role in
-                        RoleBriefCard(role: role)
+                VStack(alignment: .leading, spacing: 12) {
+                    SectionLabel("Роли в партии", detail: "\(uniqueRoles.count)")
+                    LazyVGrid(
+                        columns: [GridItem(.flexible()), GridItem(.flexible())],
+                        spacing: 10
+                    ) {
+                        ForEach(uniqueRoles) { role in
+                            RoleBriefCard(role: role)
+                        }
                     }
                 }
 
@@ -255,7 +265,7 @@ struct RulesView: View {
                 } label: {
                     Label("Начать раздачу", systemImage: "rectangle.stack.fill")
                 }
-                .primaryButton(game.theme)
+                .buttonStyle(LuxuryButtonStyle(theme: game.theme))
             }
             .contentColumn()
             .padding(.horizontal, 20)
@@ -320,28 +330,25 @@ private struct RoleBriefCard: View {
     let role: Role
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(spacing: 10) {
             Image(role.artwork)
                 .resizable()
                 .scaledToFill()
-                .frame(width: 78, height: 94)
+                .frame(width: 42, height: 42)
                 .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(Circle())
 
-            VStack(alignment: .leading, spacing: 5) {
-                Text(role.team.title)
-                    .font(.system(size: 9, weight: .black, design: .rounded))
-                    .tracking(1.2)
-                    .foregroundStyle(game.theme.palette.accent)
+            VStack(alignment: .leading, spacing: 3) {
                 Text(role.name)
-                    .font(.headline)
-                Text(role.summary)
-                    .font(.caption)
-                    .foregroundStyle(game.theme.palette.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(2)
+                Circle()
+                    .fill(role.team == .mafia ? game.theme.palette.accent : game.theme.palette.secondaryAccent)
+                    .frame(width: 5, height: 5)
             }
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .mafiaCard(game.theme, padding: 12)
+        .mafiaCard(game.theme, padding: 10)
     }
 }

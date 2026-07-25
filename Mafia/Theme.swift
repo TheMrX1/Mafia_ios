@@ -99,28 +99,31 @@ struct ThemedBackground<Content: View>: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                Image(theme.backgroundImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .clipped()
-                    .ignoresSafeArea()
-
-                LinearGradient(
-                    colors: backgroundOverlay,
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+        ZStack {
+            theme.palette.background
                 .ignoresSafeArea()
 
-                content
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-            }
+            Image(theme.backgroundImage)
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+
+            LinearGradient(
+                colors: backgroundOverlay,
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            AmbientLight(theme: theme)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(theme.palette.background)
         .foregroundStyle(theme.palette.text)
+        .animation(.easeInOut(duration: 0.45), value: theme)
     }
 
     private var backgroundOverlay: [Color] {
@@ -135,24 +138,73 @@ struct ThemedBackground<Content: View>: View {
     }
 }
 
+private struct AmbientLight: View {
+    let theme: AppTheme
+    @State private var drifting = false
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                Circle()
+                    .fill(theme.palette.accent.opacity(theme == .minimal ? 0.08 : 0.12))
+                    .frame(width: proxy.size.width * 0.92)
+                    .blur(radius: 80)
+                    .offset(
+                        x: drifting ? proxy.size.width * 0.24 : -proxy.size.width * 0.30,
+                        y: drifting ? -proxy.size.height * 0.30 : -proxy.size.height * 0.10
+                    )
+
+                Circle()
+                    .fill(theme.palette.secondaryAccent.opacity(theme == .minimal ? 0.05 : 0.08))
+                    .frame(width: proxy.size.width * 0.74)
+                    .blur(radius: 86)
+                    .offset(
+                        x: drifting ? -proxy.size.width * 0.28 : proxy.size.width * 0.30,
+                        y: drifting ? proxy.size.height * 0.28 : proxy.size.height * 0.10
+                    )
+            }
+            .onAppear {
+                withAnimation(.easeInOut(duration: 11).repeatForever(autoreverses: true)) {
+                    drifting = true
+                }
+            }
+        }
+    }
+}
+
 struct MafiaCard: ViewModifier {
     let theme: AppTheme
-    var padding: CGFloat = 18
+    var padding: CGFloat = 16
 
     func body(content: Content) -> some View {
         content
             .padding(padding)
-            .background(.ultraThinMaterial)
-            .background(theme.palette.surface)
-            .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadius, style: .continuous))
+            .background {
+                RoundedRectangle(cornerRadius: theme.cornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: theme.cornerRadius, style: .continuous)
+                            .fill(theme.palette.surface)
+                    }
+            }
             .overlay {
                 RoundedRectangle(cornerRadius: theme.cornerRadius, style: .continuous)
-                    .stroke(theme.palette.border, lineWidth: theme == .artDeco ? 1.5 : 1)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                theme.palette.border.opacity(1.2),
+                                theme.palette.border.opacity(0.34)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: theme == .artDeco ? 1.25 : 0.8
+                    )
             }
             .shadow(
-                color: theme == .minimal ? Color.black.opacity(0.06) : Color.black.opacity(0.28),
-                radius: 24,
-                y: 12
+                color: theme == .minimal ? Color.black.opacity(0.055) : Color.black.opacity(0.22),
+                radius: 18,
+                y: 9
             )
     }
 }
@@ -176,7 +228,7 @@ struct ScreenHeader: View {
                 .tracking(3.4)
                 .foregroundStyle(game.theme.palette.accent)
             Text(title)
-                .font(.system(size: 36, weight: .bold, design: .serif))
+                .font(.system(size: 32, weight: .bold, design: .serif))
                 .fixedSize(horizontal: false, vertical: true)
             if let subtitle {
                 Text(subtitle)
@@ -186,6 +238,7 @@ struct ScreenHeader: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.trailing, 48)
         .accessibilityElement(children: .combine)
     }
 }
@@ -243,30 +296,62 @@ struct RoleArtwork: View {
     }
 }
 
-extension View {
-    func mafiaCard(_ theme: AppTheme, padding: CGFloat = 18) -> some View {
-        modifier(MafiaCard(theme: theme, padding: padding))
-    }
+struct LuxuryButtonStyle: ButtonStyle {
+    let theme: AppTheme
 
-    func primaryButton(_ theme: AppTheme) -> some View {
-        self
-            .font(.system(size: 17, weight: .bold, design: .rounded))
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 16, weight: .bold, design: .rounded))
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 17)
+            .padding(.vertical, 16)
             .foregroundStyle(theme.palette.buttonText)
-            .background(
-                LinearGradient(
-                    colors: [theme.palette.accent, theme.palette.accent.opacity(0.78)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+            .background {
+                RoundedRectangle(cornerRadius: theme == .artDeco ? 10 : 18, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                theme.palette.accent.opacity(configuration.isPressed ? 0.82 : 1),
+                                theme.palette.accent.opacity(configuration.isPressed ? 0.66 : 0.78)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: theme == .artDeco ? 10 : 18, style: .continuous)
+                            .stroke(Color.white.opacity(0.20), lineWidth: 0.7)
+                    }
+            }
+            .shadow(
+                color: theme.palette.accent.opacity(configuration.isPressed ? 0.10 : 0.25),
+                radius: configuration.isPressed ? 6 : 16,
+                y: configuration.isPressed ? 3 : 8
             )
-            .clipShape(RoundedRectangle(cornerRadius: theme == .artDeco ? 8 : 18, style: .continuous))
-            .shadow(color: theme.palette.accent.opacity(0.22), radius: 14, y: 7)
+            .scaleEffect(configuration.isPressed ? 0.975 : 1)
+            .animation(.spring(response: 0.26, dampingFraction: 0.72), value: configuration.isPressed)
+    }
+}
+
+extension View {
+    func mafiaCard(_ theme: AppTheme, padding: CGFloat = 16) -> some View {
+        modifier(MafiaCard(theme: theme, padding: padding))
     }
 
     func contentColumn() -> some View {
         frame(maxWidth: 680)
             .frame(maxWidth: .infinity)
+    }
+}
+
+extension AnyTransition {
+    static var premiumScene: AnyTransition {
+        .asymmetric(
+            insertion: .opacity
+                .combined(with: .scale(scale: 1.015))
+                .combined(with: .offset(y: 14)),
+            removal: .opacity
+                .combined(with: .scale(scale: 0.985))
+                .combined(with: .offset(y: -10))
+        )
     }
 }

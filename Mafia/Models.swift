@@ -45,6 +45,27 @@ struct Role: Identifiable, Hashable {
     let strategy: String
     let nightAction: String?
 
+    var objective: String {
+        switch id {
+        case "citizen":
+            "Вычислите мафию и помогите городу исключить её."
+        case "sheriff":
+            "Найдите мафию проверками и передайте городу факты."
+        case "doctor":
+            "Сохраняйте ключевых игроков в живых."
+        case "mafia":
+            "Останьтесь в большинстве и подчините себе город."
+        case "don":
+            "Управляйте мафией и найдите шерифа."
+        case "maniac":
+            "Переживите всех и останьтесь последним."
+        case "mistress":
+            "Срывайте ночные действия опасных ролей."
+        default:
+            summary
+        }
+    }
+
     static let citizen = Role(
         id: "citizen", name: "Мирный житель", team: .city, icon: "person.fill", artwork: "RoleCitizen",
         summary: "Вы — голос города. Наблюдайте, обсуждайте и вычисляйте тех, кто скрывается среди мирных.",
@@ -183,7 +204,7 @@ struct GamePlayer: Identifiable, Hashable {
     }
 }
 
-enum GamePhase: Equatable {
+enum GamePhase: Hashable {
     case setup
     case rules
     case reveal

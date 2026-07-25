@@ -17,6 +17,8 @@ enum AppTheme: String, CaseIterable, Identifiable, Hashable {
     case neonNoir
     case artDeco
     case minimal
+    case velvet
+    case midnight
 
     var id: String { rawValue }
     var title: String {
@@ -24,6 +26,32 @@ enum AppTheme: String, CaseIterable, Identifiable, Hashable {
         case .neonNoir: "Неонуар"
         case .artDeco: "Ар-деко"
         case .minimal: "Минимализм"
+        case .velvet: "Бархат"
+        case .midnight: "Полночь"
+        }
+    }
+}
+
+enum CardSkin: String, CaseIterable, Identifiable, Hashable {
+    case crown
+    case monogram
+    case eclipse
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .crown: "Корона"
+        case .monogram: "Монограмма"
+        case .eclipse: "Затмение"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .crown: "crown.fill"
+        case .monogram: "suit.spade.fill"
+        case .eclipse: "moonphase.new.moon"
         }
     }
 }

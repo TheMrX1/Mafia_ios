@@ -5,6 +5,10 @@ import UniformTypeIdentifiers
 struct RoleRevealView: View {
     @EnvironmentObject private var game: GameSession
     @State private var dossierExpanded = false
+    @State private var dealCardVisible = false
+    @State private var sheenMoved = false
+    @State private var roleContentVisible = false
+    @State private var transitionLocked = false
 
     var body: some View {
         let player = game.players[game.revealIndex]
@@ -18,21 +22,22 @@ struct RoleRevealView: View {
             Group {
                 if game.revealIsOpen {
                     revealedRole(player)
+                        .opacity(roleContentVisible ? 1 : 0)
+                        .scaleEffect(roleContentVisible ? 1 : 0.965)
+                        .offset(y: roleContentVisible ? 0 : 10)
                 } else {
                     privacyScreen(player)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .transaction { transaction in
-                transaction.animation = nil
-            }
+            .animation(nil, value: game.revealIsOpen)
         }
         .safeAreaInset(edge: .bottom) {
             Button {
                 if game.revealIsOpen {
-                    game.closeRoleAndContinue()
+                    closeRole()
                 } else {
-                    game.revealIsOpen = true
+                    revealRole()
                 }
             } label: {
                 Label(
@@ -41,6 +46,8 @@ struct RoleRevealView: View {
                 )
             }
             .buttonStyle(LuxuryButtonStyle(theme: game.theme))
+            .disabled(transitionLocked)
+            .opacity(transitionLocked ? 0.72 : 1)
             .padding(.horizontal, 20)
             .padding(.top, 18)
             .padding(.bottom, 6)
@@ -54,8 +61,12 @@ struct RoleRevealView: View {
             }
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: game.revealIsOpen)
+        .onAppear {
+            prepareClosedCard()
+        }
         .onChange(of: game.revealIndex) {
             dossierExpanded = false
+            prepareClosedCard()
         }
     }
 
@@ -123,13 +134,99 @@ struct RoleRevealView: View {
 
     private var secretCard: some View {
         CardBackView(skin: game.cardSkin, theme: game.theme, cornerRadius: 28)
-        .frame(width: 218, height: 292)
-        .shadow(
-            color: game.theme.palette.accent.opacity(0.20),
-            radius: 26,
-            y: 18
-        )
-        .accessibilityHidden(true)
+            .frame(width: 218, height: 292)
+            .overlay {
+                GeometryReader { proxy in
+                    LinearGradient(
+                        colors: [
+                            .clear,
+                            Color.white.opacity(0.05),
+                            Color.white.opacity(0.34),
+                            Color.white.opacity(0.05),
+                            .clear
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: 74)
+                    .rotationEffect(.degrees(18))
+                    .offset(x: sheenMoved ? proxy.size.width + 40 : -114)
+                }
+                .mask {
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                }
+                .allowsHitTesting(false)
+            }
+            .rotation3DEffect(
+                .degrees(dealCardVisible ? 0 : -18),
+                axis: (x: 0.10, y: 1, z: 0),
+                perspective: 0.72
+            )
+            .rotationEffect(.degrees(dealCardVisible ? 0 : -5))
+            .scaleEffect(dealCardVisible ? 1 : 0.78)
+            .offset(y: dealCardVisible ? 0 : 28)
+            .opacity(dealCardVisible ? 1 : 0)
+            .shadow(
+                color: game.theme.palette.accent.opacity(dealCardVisible ? 0.22 : 0.06),
+                radius: dealCardVisible ? 26 : 8,
+                y: dealCardVisible ? 18 : 4
+            )
+            .accessibilityHidden(true)
+    }
+
+    private func prepareClosedCard() {
+        guard !game.revealIsOpen else {
+            roleContentVisible = true
+            return
+        }
+
+        dealCardVisible = false
+        sheenMoved = false
+        roleContentVisible = false
+
+        DispatchQueue.main.async {
+            withAnimation(.spring(response: 0.58, dampingFraction: 0.76)) {
+                dealCardVisible = true
+            }
+            withAnimation(.easeInOut(duration: 0.68).delay(0.16)) {
+                sheenMoved = true
+            }
+        }
+    }
+
+    private func revealRole() {
+        guard !transitionLocked else { return }
+        transitionLocked = true
+
+        withAnimation(.easeIn(duration: 0.18)) {
+            dealCardVisible = false
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 180_000_000)
+            game.revealIsOpen = true
+            roleContentVisible = false
+            await Task.yield()
+            withAnimation(.spring(response: 0.50, dampingFraction: 0.84)) {
+                roleContentVisible = true
+            }
+            transitionLocked = false
+        }
+    }
+
+    private func closeRole() {
+        guard !transitionLocked else { return }
+        transitionLocked = true
+
+        withAnimation(.easeIn(duration: 0.14)) {
+            roleContentVisible = false
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 140_000_000)
+            game.closeRoleAndContinue()
+            transitionLocked = false
+        }
     }
 
     private func revealedRole(_ player: GamePlayer) -> some View {

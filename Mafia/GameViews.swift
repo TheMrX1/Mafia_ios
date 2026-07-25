@@ -5,7 +5,6 @@ import UniformTypeIdentifiers
 struct RoleRevealView: View {
     @EnvironmentObject private var game: GameSession
     @State private var dossierExpanded = false
-    @State private var cardIsFloating = false
 
     var body: some View {
         let player = game.players[game.revealIndex]
@@ -16,26 +15,24 @@ struct RoleRevealView: View {
                 .padding(.top, 10)
                 .padding(.bottom, 8)
 
-            ZStack {
+            Group {
                 if game.revealIsOpen {
                     revealedRole(player)
-                        .transition(.secretCardReveal)
                 } else {
                     privacyScreen(player)
-                        .id(player.id)
-                        .transition(.secretCardReveal)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .transaction { transaction in
+                transaction.animation = nil
+            }
         }
         .safeAreaInset(edge: .bottom) {
             Button {
-                withAnimation(.spring(response: 0.66, dampingFraction: 0.82)) {
-                    if game.revealIsOpen {
-                        game.closeRoleAndContinue()
-                    } else {
-                        game.revealIsOpen = true
-                    }
+                if game.revealIsOpen {
+                    game.closeRoleAndContinue()
+                } else {
+                    game.revealIsOpen = true
                 }
             } label: {
                 Label(
@@ -59,10 +56,6 @@ struct RoleRevealView: View {
         .sensoryFeedback(.impact(weight: .medium), trigger: game.revealIsOpen)
         .onChange(of: game.revealIndex) {
             dossierExpanded = false
-            cardIsFloating = false
-            DispatchQueue.main.async {
-                startCardMotion()
-            }
         }
     }
 
@@ -126,117 +119,17 @@ struct RoleRevealView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 28)
-        .onAppear {
-            startCardMotion()
-        }
     }
 
     private var secretCard: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: cardColors,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            cardAccent.opacity(0.92),
-                            cardAccent.opacity(0.18),
-                            game.theme.palette.secondaryAccent.opacity(0.46)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.4
-                )
-
-            RoundedRectangle(cornerRadius: 21, style: .continuous)
-                .stroke(game.theme.palette.border.opacity(0.86), lineWidth: 0.8)
-                .padding(10)
-
-            VStack(spacing: 18) {
-                Image(systemName: game.cardSkin.symbol)
-                    .font(.system(size: 20, weight: .medium))
-
-                ZStack {
-                    Circle()
-                        .stroke(cardAccent.opacity(0.24), lineWidth: 1)
-                        .frame(width: 92, height: 92)
-                    Circle()
-                        .stroke(cardAccent.opacity(0.12), lineWidth: 1)
-                        .frame(width: 68, height: 68)
-                    Image(systemName: game.cardSkin.symbol)
-                        .font(.system(size: 38, weight: .light))
-                }
-
-                VStack(spacing: 5) {
-                    Text("MAFIA")
-                        .font(.system(size: 17, weight: .black, design: .serif))
-                        .tracking(5.2)
-                    Text("PRIVATE GAME")
-                        .font(.system(size: 8, weight: .bold, design: .rounded))
-                        .tracking(2.1)
-                        .opacity(0.62)
-                }
-            }
-            .foregroundStyle(cardAccent)
-
-            LinearGradient(
-                colors: [.clear, Color.white.opacity(0.20), .clear],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(width: 70)
-            .rotationEffect(.degrees(22))
-            .offset(x: cardIsFloating ? 120 : -170)
-            .mask {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-            }
-        }
+        CardBackView(skin: game.cardSkin, theme: game.theme, cornerRadius: 28)
         .frame(width: 218, height: 292)
-        .rotation3DEffect(
-            .degrees(cardIsFloating ? -1.4 : 0),
-            axis: (x: 0.18, y: 1, z: 0),
-            perspective: 0.72
-        )
-        .offset(y: cardIsFloating ? -3 : 0)
         .shadow(
-            color: cardAccent.opacity(cardIsFloating ? 0.25 : 0.14),
-            radius: cardIsFloating ? 34 : 22,
+            color: game.theme.palette.accent.opacity(0.20),
+            radius: 26,
             y: 18
         )
         .accessibilityHidden(true)
-    }
-
-    private func startCardMotion() {
-        withAnimation(.easeOut(duration: 0.55)) {
-            cardIsFloating = true
-        }
-    }
-
-    private var cardColors: [Color] {
-        switch game.cardSkin {
-        case .crown:
-            [game.theme.palette.elevatedSurface, game.theme.palette.background.opacity(0.98)]
-        case .monogram:
-            [Color(red: 0.12, green: 0.13, blue: 0.17), Color(red: 0.015, green: 0.018, blue: 0.028)]
-        case .eclipse:
-            [Color(red: 0.12, green: 0.035, blue: 0.18), Color(red: 0.018, green: 0.008, blue: 0.035)]
-        }
-    }
-
-    private var cardAccent: Color {
-        switch game.cardSkin {
-        case .crown: game.theme.palette.accent
-        case .monogram: Color(red: 0.80, green: 0.84, blue: 0.90)
-        case .eclipse: Color(red: 0.52, green: 0.88, blue: 1)
-        }
     }
 
     private func revealedRole(_ player: GamePlayer) -> some View {
@@ -281,9 +174,7 @@ struct RoleRevealView: View {
                     }
 
                     Button {
-                        withAnimation(.spring(response: 0.46, dampingFraction: 0.84)) {
-                            dossierExpanded.toggle()
-                        }
+                        dossierExpanded.toggle()
                     } label: {
                         HStack {
                             Text(dossierExpanded ? "Скрыть досье" : "Полное досье")
@@ -292,6 +183,7 @@ struct RoleRevealView: View {
                             Image(systemName: "chevron.down")
                                 .font(.caption.bold())
                                 .rotationEffect(.degrees(dossierExpanded ? 180 : 0))
+                                .animation(.easeOut(duration: 0.16), value: dossierExpanded)
                         }
                         .foregroundStyle(game.theme.palette.secondaryText)
                     }
@@ -304,7 +196,6 @@ struct RoleRevealView: View {
                             dossierSection("ПРАВИЛА", text: player.role.details)
                             dossierSection("ТАКТИКА", text: player.role.strategy)
                         }
-                        .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -331,35 +222,55 @@ struct RoleRevealView: View {
     }
 }
 
-private struct SecretCardTurn: ViewModifier {
-    let angle: Double
-    let opacity: Double
-    let scale: CGFloat
+struct HostHandoffView: View {
+    @EnvironmentObject private var game: GameSession
 
-    func body(content: Content) -> some View {
-        content
-            .opacity(opacity)
-            .scaleEffect(scale)
-            .rotation3DEffect(
-                .degrees(angle),
-                axis: (x: 0.08, y: 1, z: 0),
-                perspective: 0.68
-            )
-    }
-}
+    var body: some View {
+        VStack(spacing: 28) {
+            Spacer()
 
-private extension AnyTransition {
-    static var secretCardReveal: AnyTransition {
-        .asymmetric(
-            insertion: .modifier(
-                active: SecretCardTurn(angle: 78, opacity: 0, scale: 0.94),
-                identity: SecretCardTurn(angle: 0, opacity: 1, scale: 1)
-            ),
-            removal: .modifier(
-                active: SecretCardTurn(angle: -78, opacity: 0, scale: 0.94),
-                identity: SecretCardTurn(angle: 0, opacity: 1, scale: 1)
-            )
-        )
+            ZStack {
+                Circle()
+                    .fill(game.theme.palette.accent.opacity(0.14))
+                    .frame(width: 132, height: 132)
+                Circle()
+                    .stroke(game.theme.palette.accent.opacity(0.42), lineWidth: 1)
+                    .frame(width: 106, height: 106)
+                Image(systemName: "iphone.gen3.radiowaves.left.and.right")
+                    .font(.system(size: 46, weight: .light))
+                    .foregroundStyle(game.theme.palette.accent)
+            }
+
+            VStack(spacing: 12) {
+                Text("РОЛИ РАСПРЕДЕЛЕНЫ")
+                    .font(.system(size: 10, weight: .black, design: .rounded))
+                    .tracking(2.8)
+                    .foregroundStyle(game.theme.palette.accent)
+
+                Text("Передайте устройство\nведущему")
+                    .font(.system(size: 36, weight: .bold, design: .serif))
+                    .multilineTextAlignment(.center)
+
+                Text("Следующий экран покажет роли и состояние всего стола.")
+                    .font(.callout)
+                    .foregroundStyle(game.theme.palette.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 320)
+            }
+
+            Spacer()
+
+            Button {
+                game.openHostConsole()
+            } label: {
+                Label("Открыть пульт ведущего", systemImage: "lock.open.fill")
+            }
+            .buttonStyle(LuxuryButtonStyle(theme: game.theme))
+        }
+        .contentColumn()
+        .padding(.horizontal, 24)
+        .padding(.top, 24)
+        .padding(.bottom, 12)
     }
 }
 
@@ -781,7 +692,7 @@ struct SummaryView: View {
                     SectionLabel("Все роли раскрыты")
                     ForEach(game.players) { player in
                         HStack(spacing: 12) {
-                            Image(player.role.artwork)
+                            Image(player.role.artwork(for: game.roleSkin))
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: 44, height: 44)

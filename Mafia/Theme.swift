@@ -59,52 +59,6 @@ extension AppTheme {
                 buttonText: .white,
                 prefersDark: false
             )
-        case .velvet:
-            ThemePalette(
-                background: Color(red: 0.045, green: 0.008, blue: 0.014),
-                secondaryBackground: Color(red: 0.12, green: 0.018, blue: 0.03),
-                surface: Color(red: 0.13, green: 0.025, blue: 0.04).opacity(0.91),
-                elevatedSurface: Color(red: 0.18, green: 0.038, blue: 0.055).opacity(0.96),
-                text: Color(red: 1, green: 0.95, blue: 0.90),
-                secondaryText: Color(red: 0.80, green: 0.69, blue: 0.66),
-                accent: Color(red: 0.88, green: 0.65, blue: 0.34),
-                secondaryAccent: Color(red: 0.76, green: 0.15, blue: 0.23),
-                border: Color(red: 0.88, green: 0.65, blue: 0.34).opacity(0.28),
-                buttonText: Color(red: 0.12, green: 0.025, blue: 0.03),
-                prefersDark: true
-            )
-        case .midnight:
-            ThemePalette(
-                background: Color(red: 0.008, green: 0.025, blue: 0.055),
-                secondaryBackground: Color(red: 0.016, green: 0.06, blue: 0.12),
-                surface: Color(red: 0.025, green: 0.075, blue: 0.14).opacity(0.90),
-                elevatedSurface: Color(red: 0.035, green: 0.105, blue: 0.19).opacity(0.96),
-                text: Color(red: 0.93, green: 0.97, blue: 1),
-                secondaryText: Color(red: 0.65, green: 0.74, blue: 0.84),
-                accent: Color(red: 0.42, green: 0.78, blue: 1),
-                secondaryAccent: Color(red: 0.60, green: 0.56, blue: 1),
-                border: Color(red: 0.55, green: 0.78, blue: 1).opacity(0.24),
-                buttonText: Color(red: 0.015, green: 0.05, blue: 0.10),
-                prefersDark: true
-            )
-        }
-    }
-
-    var backgroundImage: String {
-        switch self {
-        case .neonNoir: "BackgroundNeon"
-        case .artDeco: "BackgroundDeco"
-        case .minimal: "BackgroundMinimal"
-        case .velvet: "BackgroundDeco"
-        case .midnight: "BackgroundNeon"
-        }
-    }
-
-    var backgroundTint: Color {
-        switch self {
-        case .velvet: Color(red: 0.72, green: 0.16, blue: 0.19)
-        case .midnight: Color(red: 0.25, green: 0.48, blue: 0.86)
-        default: .white
         }
     }
 
@@ -113,8 +67,6 @@ extension AppTheme {
         case .neonNoir: 24
         case .artDeco: 8
         case .minimal: 20
-        case .velvet: 18
-        case .midnight: 22
         }
     }
 }
@@ -131,10 +83,16 @@ extension Team {
 
 struct ThemedBackground<Content: View>: View {
     let theme: AppTheme
+    let wallpaper: Wallpaper
     let content: Content
 
-    init(theme: AppTheme, @ViewBuilder content: () -> Content) {
+    init(
+        theme: AppTheme,
+        wallpaper: Wallpaper,
+        @ViewBuilder content: () -> Content
+    ) {
         self.theme = theme
+        self.wallpaper = wallpaper
         self.content = content()
     }
 
@@ -143,10 +101,9 @@ struct ThemedBackground<Content: View>: View {
             theme.palette.background
                 .ignoresSafeArea()
 
-            Image(theme.backgroundImage)
+            Image(wallpaper.artwork)
                 .resizable()
                 .scaledToFill()
-                .colorMultiply(theme.backgroundTint)
                 .ignoresSafeArea()
 
             LinearGradient(
@@ -160,21 +117,18 @@ struct ThemedBackground<Content: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .foregroundStyle(theme.palette.text)
-        .animation(.easeInOut(duration: 0.45), value: theme)
     }
 
     private var backgroundOverlay: [Color] {
-        switch theme {
-        case .minimal:
+        switch wallpaper {
+        case .editorial:
             [Color.white.opacity(0.10), Color.white.opacity(0.54)]
-        case .neonNoir:
-            [Color.black.opacity(0.18), Color.black.opacity(0.64)]
-        case .artDeco:
-            [Color.black.opacity(0.22), Color.black.opacity(0.68)]
-        case .velvet:
-            [Color.black.opacity(0.18), Color.black.opacity(0.64)]
-        case .midnight:
-            [Color.black.opacity(0.12), Color.black.opacity(0.62)]
+        case .shogunMoon:
+            [Color.black.opacity(0.12), Color.black.opacity(0.70)]
+        case .crimsonTheatre:
+            [Color.black.opacity(0.18), Color.black.opacity(0.72)]
+        default:
+            [Color.black.opacity(0.18), Color.black.opacity(0.66)]
         }
     }
 }
@@ -278,7 +232,7 @@ struct RoleArtwork: View {
     var height: CGFloat = 280
 
     var body: some View {
-        Image(role.artwork)
+        Image(role.artwork(for: game.roleSkin))
             .resizable()
             .scaledToFill()
             .frame(maxWidth: .infinity)
@@ -296,6 +250,60 @@ struct RoleArtwork: View {
                 RoundedRectangle(cornerRadius: game.theme.cornerRadius, style: .continuous)
                     .stroke(game.theme.palette.border, lineWidth: 1)
             }
+    }
+}
+
+struct GameLogoMark: View {
+    var color: Color = .white
+    var compact = false
+
+    var body: some View {
+        VStack(spacing: compact ? 2 : 4) {
+            ZStack {
+                Circle()
+                    .stroke(color.opacity(0.46), lineWidth: compact ? 0.7 : 1)
+                Image(systemName: "crown.fill")
+                    .font(.system(size: compact ? 9 : 18, weight: .semibold))
+            }
+            .frame(width: compact ? 22 : 46, height: compact ? 22 : 46)
+
+            Text("MAFIA")
+                .font(.system(size: compact ? 8 : 15, weight: .black, design: .serif))
+                .tracking(compact ? 2 : 4)
+        }
+        .foregroundStyle(color)
+        .accessibilityLabel("Mafia")
+    }
+}
+
+struct CardBackView: View {
+    let skin: CardSkin
+    let theme: AppTheme
+    var cornerRadius: CGFloat = 24
+
+    var body: some View {
+        ZStack {
+            Image(skin.artwork)
+                .resizable()
+                .scaledToFill()
+
+            LinearGradient(
+                colors: [Color.black.opacity(0.04), Color.black.opacity(0.34)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            RoundedRectangle(cornerRadius: max(8, cornerRadius - 7), style: .continuous)
+                .stroke(Color.white.opacity(0.34), lineWidth: 0.8)
+                .padding(9)
+
+            GameLogoMark(color: .white)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(theme.palette.accent.opacity(0.58), lineWidth: 1.1)
+        }
     }
 }
 

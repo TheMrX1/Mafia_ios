@@ -18,16 +18,13 @@ struct SetupView: View {
 
                 if game.mode == .classic {
                     playerCountCard
-                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
                     SectionLabel("Сценарий", detail: "\(game.configurations.count) вариантов")
                     ForEach(game.configurations) { config in
                         Button {
-                            withAnimation(.snappy) {
-                                game.selectedConfigurationID = config.id
-                            }
+                            game.selectedConfigurationID = config.id
                         } label: {
                             ConfigurationRow(
                                 configuration: config,
@@ -61,9 +58,7 @@ struct SetupView: View {
             HStack(spacing: 10) {
                 ForEach(GameMode.allCases) { mode in
                     Button {
-                        withAnimation(.snappy) {
-                            game.changeMode(mode)
-                        }
+                        game.changeMode(mode)
                     } label: {
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
@@ -119,9 +114,7 @@ struct SetupView: View {
     private var namesCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Button {
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.84)) {
-                    namesExpanded.toggle()
-                }
+                namesExpanded.toggle()
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "person.2.fill")
@@ -138,6 +131,7 @@ struct SetupView: View {
                         .font(.caption.bold())
                         .foregroundStyle(game.theme.palette.secondaryText)
                         .rotationEffect(.degrees(namesExpanded ? 180 : 0))
+                        .animation(.easeOut(duration: 0.16), value: namesExpanded)
                 }
             }
             .buttonStyle(.plain)
@@ -160,7 +154,6 @@ struct SetupView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .mafiaCard(game.theme)
@@ -331,7 +324,7 @@ private struct RoleBriefCard: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(role.artwork)
+            Image(role.artwork(for: game.roleSkin))
                 .resizable()
                 .scaledToFill()
                 .frame(width: 42, height: 42)

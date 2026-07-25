@@ -7,7 +7,7 @@ struct RootView: View {
     @State private var settingsPresented = false
 
     var body: some View {
-        ThemedBackground(theme: game.theme) {
+        ThemedBackground(theme: game.theme, wallpaper: game.wallpaper) {
             ZStack {
                 Group {
                     switch game.phase {
@@ -17,6 +17,10 @@ struct RootView: View {
                         RulesView()
                     case .reveal:
                         RoleRevealView()
+                    case .hostHandoff:
+                        HostHandoffView()
+                    case .host:
+                        HostView()
                     case .day:
                         HostView()
                     case .vote:
@@ -28,8 +32,11 @@ struct RootView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .transaction { transaction in
+                    transaction.animation = nil
+                }
 
-                if game.phase != .reveal {
+                if game.phase != .reveal && game.phase != .hostHandoff {
                     Button {
                         settingsPresented = true
                     } label: {
@@ -48,7 +55,6 @@ struct RootView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .padding(.top, 8)
                     .padding(.trailing, 18)
-                    .transition(.scale.combined(with: .opacity))
                 }
             }
         }

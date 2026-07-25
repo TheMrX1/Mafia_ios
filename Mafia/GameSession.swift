@@ -12,7 +12,9 @@ final class GameSession: ObservableObject {
     @Published var phase: GamePhase = .setup
     @Published var mode: GameMode = .sport
     @Published var theme: AppTheme = .neonNoir
-    @Published var cardSkin: CardSkin = .crown
+    @Published var wallpaper: Wallpaper = .neonClub
+    @Published var roleSkin: RoleSkin = .classic
+    @Published var cardSkin: CardSkin = .obsidian
     @Published var playerCount = 10
     @Published var playerNames = (1...10).map { "Игрок \($0)" }
     @Published var selectedConfigurationID = GameConfiguration.sport.id
@@ -26,6 +28,8 @@ final class GameSession: ObservableObject {
     @Published var winnerText: String?
     @Published var dayMinutes = 3
     @Published var endTone: EndTone = .bell
+    @Published var warnings: [UUID: PlayerWarning] = [:]
+    @Published var silencedPlayers: Set<UUID> = []
 
     var configurations: [GameConfiguration] {
         mode == .sport ? [.sport] : GameConfiguration.classic(playerCount: playerCount)
@@ -91,6 +95,8 @@ final class GameSession: ObservableObject {
         votes = [:]
         winnerText = nil
         eliminationMessage = nil
+        warnings = [:]
+        silencedPlayers = []
         phase = .rules
     }
 
@@ -105,8 +111,12 @@ final class GameSession: ObservableObject {
         if revealIndex + 1 < players.count {
             revealIndex += 1
         } else {
-            phase = .day
+            phase = .hostHandoff
         }
+    }
+
+    func openHostConsole() {
+        phase = .host
     }
 
     func beginVote() {
@@ -152,7 +162,17 @@ final class GameSession: ObservableObject {
             }
         }
         round += 1
-        phase = evaluateWinner() ? .summary : .day
+        phase = evaluateWinner() ? .summary : .host
+    }
+
+    func finishNight(eliminatedIDs: Set<UUID>, silencedIDs: Set<UUID>) {
+        silencedPlayers = silencedIDs.intersection(Set(alivePlayers.map(\.id)))
+        finishNight(eliminatedIDs: eliminatedIDs)
+    }
+
+    func beginNight() {
+        silencedPlayers.removeAll()
+        phase = .host
     }
 
     func eliminate(_ id: UUID) {
@@ -163,12 +183,63 @@ final class GameSession: ObservableObject {
         }
     }
 
+    func toggleAlive(_ id: UUID) {
+        guard let index = players.firstIndex(where: { $0.id == id }) else { return }
+        players[index].isAlive.toggle()
+        if !players[index].isAlive {
+            silencedPlayers.remove(id)
+        }
+    }
+
+    func setWarning(_ warning: PlayerWarning, for id: UUID) {
+        if warning == .none {
+            warnings.removeValue(forKey: id)
+        } else {
+            warnings[id] = warning
+        }
+    }
+
+    func cycleWarning(for id: UUID) {
+        switch warning(for: id) {
+        case .none:
+            warnings[id] = .yellow
+        case .yellow:
+            warnings[id] = .red
+        case .red:
+            warnings.removeValue(forKey: id)
+        }
+    }
+
+    func warning(for id: UUID) -> PlayerWarning {
+        warnings[id] ?? .none
+    }
+
+    func toggleSilenced(_ id: UUID) {
+        if silencedPlayers.contains(id) {
+            silencedPlayers.remove(id)
+        } else {
+            silencedPlayers.insert(id)
+        }
+    }
+
+    func canSpeak(_ player: GamePlayer) -> Bool {
+        player.isAlive
+            && warning(for: player.id) != .red
+            && !silencedPlayers.contains(player.id)
+    }
+
+    func canVote(_ player: GamePlayer) -> Bool {
+        player.isAlive && warning(for: player.id) != .red
+    }
+
     func resetGame() {
         phase = .setup
         players = []
         votes = [:]
         winnerText = nil
         eliminationMessage = nil
+        warnings = [:]
+        silencedPlayers = []
     }
 
     @discardableResult

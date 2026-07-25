@@ -9,7 +9,7 @@ struct SettingsView: View {
     @State private var importerPresented = false
 
     var body: some View {
-        ThemedBackground(theme: game.theme) {
+        ThemedBackground(theme: game.theme, wallpaper: game.wallpaper) {
             ZStack {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 20) {
@@ -20,6 +20,8 @@ struct SettingsView: View {
                         )
 
                         themeSection
+                        wallpaperSection
+                        roleSkinSection
                         cardSkinSection
                         timerSection
                         musicSection
@@ -65,24 +67,17 @@ struct SettingsView: View {
     private var cardSkinSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionLabel("Рубашка карты")
-            HStack(spacing: 10) {
+            LazyVGrid(
+                columns: [GridItem(.flexible()), GridItem(.flexible())],
+                spacing: 10
+            ) {
                 ForEach(CardSkin.allCases) { skin in
                     Button {
-                        withAnimation(.easeOut(duration: 0.18)) {
-                            game.cardSkin = skin
-                        }
+                        game.cardSkin = skin
                     } label: {
                         VStack(spacing: 10) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(game.theme.palette.elevatedSurface)
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(game.theme.palette.accent.opacity(0.55), lineWidth: 1)
-                                Image(systemName: skin.symbol)
-                                    .font(.title2)
-                                    .foregroundStyle(game.theme.palette.accent)
-                            }
-                            .frame(height: 74)
+                            CardBackView(skin: skin, theme: game.theme, cornerRadius: 12)
+                                .frame(height: 116)
                             Text(skin.title)
                                 .font(.caption.weight(.semibold))
                                 .lineLimit(1)
@@ -107,17 +102,17 @@ struct SettingsView: View {
             SectionLabel("Визуальный стиль")
             ForEach(AppTheme.allCases) { theme in
                 Button {
-                    withAnimation(.snappy) {
-                        game.theme = theme
-                    }
+                    game.theme = theme
                 } label: {
                     HStack(spacing: 14) {
-                        Image(theme.backgroundImage)
-                            .resizable()
-                            .scaledToFill()
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(theme.palette.background)
                             .frame(width: 68, height: 58)
-                            .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay {
+                                Circle()
+                                    .fill(theme.palette.accent)
+                                    .frame(width: 22, height: 22)
+                            }
 
                         VStack(alignment: .leading, spacing: 3) {
                             Text(theme.title)
@@ -134,6 +129,98 @@ struct SettingsView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .mafiaCard(game.theme, padding: 12)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var wallpaperSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionLabel("Обои")
+            LazyVGrid(
+                columns: [GridItem(.flexible()), GridItem(.flexible())],
+                spacing: 10
+            ) {
+                ForEach(Wallpaper.allCases) { wallpaper in
+                    Button {
+                        game.wallpaper = wallpaper
+                    } label: {
+                        ZStack(alignment: .bottomLeading) {
+                            Image(wallpaper.artwork)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(height: 128)
+                                .clipped()
+
+                            LinearGradient(
+                                colors: [.clear, .black.opacity(0.78)],
+                                startPoint: .center,
+                                endPoint: .bottom
+                            )
+
+                            Text(wallpaper.title)
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.white)
+                                .padding(10)
+
+                            if game.wallpaper == wallpaper {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.white)
+                                    .padding(9)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                                .stroke(
+                                    game.wallpaper == wallpaper
+                                        ? game.theme.palette.accent
+                                        : game.theme.palette.border,
+                                    lineWidth: game.wallpaper == wallpaper ? 1.5 : 0.8
+                                )
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var roleSkinSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionLabel("Образы ролей")
+            ForEach(RoleSkin.allCases) { skin in
+                Button {
+                    game.roleSkin = skin
+                } label: {
+                    HStack(spacing: 13) {
+                        Image(Role.mafia.artwork(for: skin))
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 58, height: 58)
+                            .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(skin.title)
+                                .font(.headline)
+                            Text(skin.subtitle)
+                                .font(.caption)
+                                .foregroundStyle(game.theme.palette.secondaryText)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: game.roleSkin == skin ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(
+                                game.roleSkin == skin
+                                    ? game.theme.palette.accent
+                                    : game.theme.palette.secondaryText
+                            )
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .mafiaCard(game.theme, padding: 11)
                 }
                 .buttonStyle(.plain)
             }
@@ -204,8 +291,6 @@ struct SettingsView: View {
         case .neonNoir: "Ночной город, стекло и холодный неон"
         case .artDeco: "Изумруд, латунь и атмосфера закрытого клуба"
         case .minimal: "Светлая редакционная эстетика и тишина"
-        case .velvet: "Бордовый бархат и тёплое старое золото"
-        case .midnight: "Глубокий синий, стекло и ночной город"
         }
     }
 }

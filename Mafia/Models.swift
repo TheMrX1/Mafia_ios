@@ -17,8 +17,6 @@ enum AppTheme: String, CaseIterable, Identifiable, Hashable {
     case neonNoir
     case artDeco
     case minimal
-    case velvet
-    case midnight
 
     var id: String { rawValue }
     var title: String {
@@ -26,32 +24,98 @@ enum AppTheme: String, CaseIterable, Identifiable, Hashable {
         case .neonNoir: "Неонуар"
         case .artDeco: "Ар-деко"
         case .minimal: "Минимализм"
-        case .velvet: "Бархат"
-        case .midnight: "Полночь"
         }
     }
 }
 
-enum CardSkin: String, CaseIterable, Identifiable, Hashable {
-    case crown
-    case monogram
-    case eclipse
+enum Wallpaper: String, CaseIterable, Identifiable, Hashable {
+    case neonClub
+    case decoHall
+    case editorial
+    case rainDistrict
+    case shogunMoon
+    case crimsonTheatre
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .crown: "Корона"
-        case .monogram: "Монограмма"
-        case .eclipse: "Затмение"
+        case .neonClub: "Закрытый клуб"
+        case .decoHall: "Изумрудный зал"
+        case .editorial: "Светлая редакция"
+        case .rainDistrict: "Дождливый квартал"
+        case .shogunMoon: "Луна сёгуна"
+        case .crimsonTheatre: "Алый театр"
         }
     }
 
-    var symbol: String {
+    var artwork: String {
         switch self {
-        case .crown: "crown.fill"
-        case .monogram: "suit.spade.fill"
-        case .eclipse: "moonphase.new.moon"
+        case .neonClub: "BackgroundNeon"
+        case .decoHall: "BackgroundDeco"
+        case .editorial: "BackgroundMinimal"
+        case .rainDistrict: "BackgroundRainDistrict"
+        case .shogunMoon: "BackgroundShogunMoon"
+        case .crimsonTheatre: "BackgroundCrimsonTheatre"
+        }
+    }
+}
+
+enum RoleSkin: String, CaseIterable, Identifiable, Hashable {
+    case classic
+    case cyberpunk
+    case samurai
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .classic: "Классика"
+        case .cyberpunk: "Киберпанк"
+        case .samurai: "Япония"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .classic: "Кинематографичный закрытый клуб"
+        case .cyberpunk: "Неон, импланты и город будущего"
+        case .samurai: "Самураи, кланы и эпоха Эдо"
+        }
+    }
+
+    fileprivate var artworkSuffix: String {
+        switch self {
+        case .classic: ""
+        case .cyberpunk: "Cyber"
+        case .samurai: "Samurai"
+        }
+    }
+}
+
+enum CardSkin: String, CaseIterable, Identifiable, Hashable {
+    case obsidian
+    case neonCircuit
+    case ukiyoE
+    case evidence
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .obsidian: "Обсидиан"
+        case .neonCircuit: "Неоновая сеть"
+        case .ukiyoE: "Лунный клан"
+        case .evidence: "Досье"
+        }
+    }
+
+    var artwork: String {
+        switch self {
+        case .obsidian: "CardBackObsidian"
+        case .neonCircuit: "CardBackNeonCircuit"
+        case .ukiyoE: "CardBackUkiyoE"
+        case .evidence: "CardBackEvidence"
         }
     }
 }
@@ -72,6 +136,10 @@ struct Role: Identifiable, Hashable {
     let details: String
     let strategy: String
     let nightAction: String?
+
+    func artwork(for skin: RoleSkin) -> String {
+        artwork + skin.artworkSuffix
+    }
 
     var objective: String {
         switch id {
@@ -236,10 +304,26 @@ enum GamePhase: Hashable {
     case setup
     case rules
     case reveal
+    case hostHandoff
+    case host
     case day
     case vote
     case night
     case summary
+}
+
+enum PlayerWarning: Int, CaseIterable, Hashable {
+    case none
+    case yellow
+    case red
+
+    var title: String {
+        switch self {
+        case .none: "Без предупреждений"
+        case .yellow: "Жёлтая карточка"
+        case .red: "Красная карточка"
+        }
+    }
 }
 
 enum EndTone: String, CaseIterable, Identifiable, Hashable {

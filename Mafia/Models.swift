@@ -76,14 +76,6 @@ enum RoleSkin: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    var subtitle: String {
-        switch self {
-        case .classic: "Кинематографичный закрытый клуб"
-        case .cyberpunk: "Неон, импланты и город будущего"
-        case .samurai: "Самураи, кланы и эпоха Эдо"
-        }
-    }
-
     fileprivate var artworkSuffix: String {
         switch self {
         case .classic: ""
@@ -94,6 +86,7 @@ enum RoleSkin: String, CaseIterable, Identifiable, Hashable {
 }
 
 enum CardSkin: String, CaseIterable, Identifiable, Hashable {
+    case classic
     case obsidian
     case neonCircuit
     case ukiyoE
@@ -103,6 +96,7 @@ enum CardSkin: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
+        case .classic: "Оригинал"
         case .obsidian: "Обсидиан"
         case .neonCircuit: "Неоновая сеть"
         case .ukiyoE: "Лунный клан"
@@ -110,8 +104,9 @@ enum CardSkin: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    var artwork: String {
+    var artwork: String? {
         switch self {
+        case .classic: nil
         case .obsidian: "CardBackObsidian"
         case .neonCircuit: "CardBackNeonCircuit"
         case .ukiyoE: "CardBackUkiyoE"

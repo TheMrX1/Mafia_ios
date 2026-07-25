@@ -254,25 +254,93 @@ struct RoleArtwork: View {
 }
 
 struct GameLogoMark: View {
-    var color: Color = .white
-    var compact = false
+    var color = Color(red: 0.96, green: 0.72, blue: 0.28)
 
     var body: some View {
-        VStack(spacing: compact ? 2 : 4) {
-            ZStack {
-                Circle()
-                    .stroke(color.opacity(0.46), lineWidth: compact ? 0.7 : 1)
-                Image(systemName: "crown.fill")
-                    .font(.system(size: compact ? 9 : 18, weight: .semibold))
-            }
-            .frame(width: compact ? 22 : 46, height: compact ? 22 : 46)
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
 
-            Text("MAFIA")
-                .font(.system(size: compact ? 8 : 15, weight: .black, design: .serif))
-                .tracking(compact ? 2 : 4)
+            ZStack {
+                MafiaMaskShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.96),
+                                Color(red: 0.09, green: 0.075, blue: 0.07)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        style: FillStyle(eoFill: true)
+                    )
+
+                MafiaMaskShape()
+                    .stroke(
+                        LinearGradient(
+                            colors: [color.opacity(0.98), color.opacity(0.48)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        style: StrokeStyle(lineWidth: max(1, width * 0.025), lineJoin: .round)
+                    )
+
+                Path { path in
+                    path.move(to: CGPoint(x: width * 0.38, y: height * 0.08))
+                    path.addLine(to: CGPoint(x: width * 0.46, y: height * 0.18))
+                    path.addLine(to: CGPoint(x: width * 0.50, y: height * 0.05))
+                    path.addLine(to: CGPoint(x: width * 0.54, y: height * 0.18))
+                    path.addLine(to: CGPoint(x: width * 0.62, y: height * 0.08))
+                    path.addLine(to: CGPoint(x: width * 0.58, y: height * 0.27))
+                    path.addLine(to: CGPoint(x: width * 0.42, y: height * 0.27))
+                    path.closeSubpath()
+                }
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.72), color],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+            }
         }
-        .foregroundStyle(color)
+        .aspectRatio(1, contentMode: .fit)
         .accessibilityLabel("Mafia")
+    }
+}
+
+private struct MafiaMaskShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let width = rect.width
+        let height = rect.height
+
+        var path = Path()
+
+        path.move(to: CGPoint(x: width * 0.06, y: height * 0.12))
+        path.addLine(to: CGPoint(x: width * 0.46, y: height * 0.34))
+        path.addLine(to: CGPoint(x: width * 0.46, y: height * 0.94))
+        path.addLine(to: CGPoint(x: width * 0.14, y: height * 0.73))
+        path.addLine(to: CGPoint(x: width * 0.10, y: height * 0.46))
+        path.closeSubpath()
+
+        path.move(to: CGPoint(x: width * 0.94, y: height * 0.12))
+        path.addLine(to: CGPoint(x: width * 0.54, y: height * 0.34))
+        path.addLine(to: CGPoint(x: width * 0.54, y: height * 0.94))
+        path.addLine(to: CGPoint(x: width * 0.86, y: height * 0.73))
+        path.addLine(to: CGPoint(x: width * 0.90, y: height * 0.46))
+        path.closeSubpath()
+
+        path.move(to: CGPoint(x: width * 0.17, y: height * 0.49))
+        path.addLine(to: CGPoint(x: width * 0.42, y: height * 0.57))
+        path.addLine(to: CGPoint(x: width * 0.22, y: height * 0.68))
+        path.closeSubpath()
+
+        path.move(to: CGPoint(x: width * 0.83, y: height * 0.49))
+        path.addLine(to: CGPoint(x: width * 0.58, y: height * 0.57))
+        path.addLine(to: CGPoint(x: width * 0.78, y: height * 0.68))
+        path.closeSubpath()
+
+        return path
     }
 }
 
@@ -283,26 +351,84 @@ struct CardBackView: View {
 
     var body: some View {
         ZStack {
-            Image(skin.artwork)
-                .resizable()
-                .scaledToFill()
+            cardArtwork
 
             LinearGradient(
-                colors: [Color.black.opacity(0.04), Color.black.opacity(0.34)],
+                colors: [Color.black.opacity(0.02), Color.black.opacity(0.20)],
                 startPoint: .top,
                 endPoint: .bottom
             )
 
             RoundedRectangle(cornerRadius: max(8, cornerRadius - 7), style: .continuous)
-                .stroke(Color.white.opacity(0.34), lineWidth: 0.8)
+                .stroke(logoColor.opacity(0.62), lineWidth: 0.8)
                 .padding(9)
 
-            GameLogoMark(color: .white)
+            GeometryReader { proxy in
+                let side = min(proxy.size.width * 0.39, 84)
+
+                GameLogoMark(color: logoColor)
+                    .frame(width: side, height: side)
+                    .position(
+                        x: proxy.size.width / 2,
+                        y: proxy.size.height * 0.52
+                    )
+            }
         }
+        .aspectRatio(3 / 4, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(theme.palette.accent.opacity(0.58), lineWidth: 1.1)
+                .stroke(logoColor.opacity(0.72), lineWidth: 1.1)
+        }
+    }
+
+    @ViewBuilder
+    private var cardArtwork: some View {
+        if let artwork = skin.artwork {
+            Image(artwork)
+                .resizable()
+                .scaledToFill()
+        } else {
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.12, green: 0.025, blue: 0.10),
+                        Color(red: 0.018, green: 0.010, blue: 0.035)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                ForEach(0..<5, id: \.self) { index in
+                    RoundedRectangle(
+                        cornerRadius: max(6, cornerRadius - CGFloat(index * 2)),
+                        style: .continuous
+                    )
+                    .stroke(
+                        logoColor.opacity(0.22 - Double(index) * 0.035),
+                        lineWidth: 0.7
+                    )
+                    .padding(CGFloat(15 + index * 9))
+                }
+
+                Circle()
+                    .fill(Color.black.opacity(0.38))
+                    .overlay {
+                        Circle().stroke(logoColor.opacity(0.74), lineWidth: 1)
+                    }
+                    .frame(maxWidth: 112, maxHeight: 112)
+            }
+        }
+    }
+
+    private var logoColor: Color {
+        switch skin {
+        case .classic:
+            Color(red: 1, green: 0.30, blue: 0.58)
+        case .obsidian, .ukiyoE, .evidence:
+            Color(red: 0.96, green: 0.72, blue: 0.28)
+        case .neonCircuit:
+            Color(red: 0.27, green: 0.91, blue: 1)
         }
     }
 }

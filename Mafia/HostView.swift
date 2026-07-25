@@ -71,9 +71,8 @@ struct HostView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .transaction { transaction in
-                transaction.animation = nil
-            }
+            .animation(nil, value: nightStage)
+            .animation(nil, value: section)
 
             if nightStage == .neutral {
                 sectionBar
@@ -180,8 +179,32 @@ struct HostView: View {
                         Spacer()
                         Image(systemName: "arrow.right")
                     }
+                    .padding(.horizontal, 18)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 92)
+                    .foregroundStyle(game.theme.palette.buttonText)
+                    .background {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        game.theme.palette.accent,
+                                        game.theme.palette.accent.opacity(0.80)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.24), lineWidth: 1)
+                            .allowsHitTesting(false)
+                    }
+                    .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 }
-                .buttonStyle(LuxuryButtonStyle(theme: game.theme))
+                .buttonStyle(HostNightButtonStyle())
 
                 HStack {
                     SectionLabel("Состояние игроков", detail: "\(game.players.count)")
@@ -775,5 +798,21 @@ struct HostView: View {
         } else {
             set.insert(id)
         }
+    }
+}
+
+private struct HostNightButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .opacity(configuration.isPressed ? 0.90 : 1)
+            .shadow(
+                color: Color(red: 1, green: 0.24, blue: 0.57).opacity(
+                    configuration.isPressed ? 0.10 : 0.24
+                ),
+                radius: configuration.isPressed ? 6 : 16,
+                y: configuration.isPressed ? 3 : 8
+            )
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }

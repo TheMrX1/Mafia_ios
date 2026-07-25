@@ -8,7 +8,7 @@ struct RootView: View {
 
     var body: some View {
         ThemedBackground(theme: game.theme, wallpaper: game.wallpaper) {
-            ZStack {
+            ZStack(alignment: .topTrailing) {
                 Group {
                     switch game.phase {
                     case .setup:
@@ -32,9 +32,7 @@ struct RootView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .transaction { transaction in
-                    transaction.animation = nil
-                }
+                .animation(nil, value: game.phase)
 
                 if game.phase != .reveal && game.phase != .hostHandoff {
                     Button {
@@ -50,9 +48,8 @@ struct RootView: View {
                                 Circle().stroke(game.theme.palette.border, lineWidth: 0.8)
                             }
                             .shadow(color: .black.opacity(0.14), radius: 12, y: 6)
-                }
+                    }
                     .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .padding(.top, 8)
                     .padding(.trailing, 18)
                 }

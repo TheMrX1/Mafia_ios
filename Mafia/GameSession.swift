@@ -9,12 +9,30 @@ struct VoteResult: Identifiable {
 
 @MainActor
 final class GameSession: ObservableObject {
+    private enum StorageKey {
+        static let wallpaper = "mafia.settings.wallpaper"
+        static let roleSkin = "mafia.settings.roleSkin"
+        static let cardSkin = "mafia.settings.cardSkin"
+    }
+
     @Published var phase: GamePhase = .setup
     @Published var mode: GameMode = .sport
-    @Published var theme: AppTheme = .neonNoir
-    @Published var wallpaper: Wallpaper = .neonClub
-    @Published var roleSkin: RoleSkin = .classic
-    @Published var cardSkin: CardSkin = .obsidian
+    let theme: AppTheme = .neonNoir
+    @Published var wallpaper: Wallpaper {
+        didSet {
+            UserDefaults.standard.set(wallpaper.rawValue, forKey: StorageKey.wallpaper)
+        }
+    }
+    @Published var roleSkin: RoleSkin {
+        didSet {
+            UserDefaults.standard.set(roleSkin.rawValue, forKey: StorageKey.roleSkin)
+        }
+    }
+    @Published var cardSkin: CardSkin {
+        didSet {
+            UserDefaults.standard.set(cardSkin.rawValue, forKey: StorageKey.cardSkin)
+        }
+    }
     @Published var playerCount = 10
     @Published var playerNames = (1...10).map { "Игрок \($0)" }
     @Published var selectedConfigurationID = GameConfiguration.sport.id
@@ -30,6 +48,18 @@ final class GameSession: ObservableObject {
     @Published var endTone: EndTone = .bell
     @Published var warnings: [UUID: PlayerWarning] = [:]
     @Published var silencedPlayers: Set<UUID> = []
+
+    init(defaults: UserDefaults = .standard) {
+        wallpaper = defaults
+            .string(forKey: StorageKey.wallpaper)
+            .flatMap { Wallpaper(rawValue: $0) } ?? .neonClub
+        roleSkin = defaults
+            .string(forKey: StorageKey.roleSkin)
+            .flatMap { RoleSkin(rawValue: $0) } ?? .classic
+        cardSkin = defaults
+            .string(forKey: StorageKey.cardSkin)
+            .flatMap { CardSkin(rawValue: $0) } ?? .obsidian
+    }
 
     var configurations: [GameConfiguration] {
         mode == .sport ? [.sport] : GameConfiguration.classic(playerCount: playerCount)

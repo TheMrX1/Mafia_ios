@@ -350,7 +350,7 @@ struct CardBackShape: Shape {
 
     func path(in rect: CGRect) -> Path {
         RoundedRectangle(
-            cornerRadius: min(maximumCornerRadius, rect.width * 0.085),
+            cornerRadius: min(maximumCornerRadius, rect.width * 0.08),
             style: .continuous
         )
         .path(in: rect)

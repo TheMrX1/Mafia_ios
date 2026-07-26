@@ -152,7 +152,10 @@ struct RoleRevealView: View {
                     .offset(x: sheenMoved ? proxy.size.width + 40 : -114)
                 }
                 .mask {
-                    CardBackShape(maximumCornerRadius: 28)
+                    CardBackShape(
+                        maximumCornerRadius: 28,
+                        cornerRadiusRatio: game.cardSkin.artworkCornerRadiusRatio
+                    )
                 }
                 .allowsHitTesting(false)
             }

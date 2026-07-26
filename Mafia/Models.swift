@@ -116,6 +116,13 @@ enum CardSkin: String, CaseIterable, Identifiable, Hashable {
         case .evidence: "CardBackEvidence"
         }
     }
+
+    var artworkCornerRadiusRatio: CGFloat {
+        switch self {
+        case .ukiyoE: 0.05
+        default: 0.08
+        }
+    }
 }
 
 enum Team: String, Codable, Hashable {

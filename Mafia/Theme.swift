@@ -347,10 +347,11 @@ private struct MafiaMaskShape: Shape {
 
 struct CardBackShape: Shape {
     let maximumCornerRadius: CGFloat
+    var cornerRadiusRatio: CGFloat = 0.08
 
     func path(in rect: CGRect) -> Path {
         RoundedRectangle(
-            cornerRadius: min(maximumCornerRadius, rect.width * 0.08),
+            cornerRadius: min(maximumCornerRadius, rect.width * cornerRadiusRatio),
             style: .continuous
         )
         .path(in: rect)
@@ -368,19 +369,26 @@ struct CardBackView: View {
                 .resizable()
                 .scaledToFill()
 
-            GeometryReader { proxy in
-                let side = min(proxy.size.width * logoScale, 76)
+            if skin != .classic {
+                GeometryReader { proxy in
+                    let side = min(proxy.size.width * logoScale, 76)
 
-                GameLogoMark(color: logoColor)
-                    .frame(width: side, height: side)
-                    .position(
-                        x: proxy.size.width / 2,
-                        y: proxy.size.height * logoVerticalPosition
-                    )
+                    GameLogoMark(color: logoColor)
+                        .frame(width: side, height: side)
+                        .position(
+                            x: proxy.size.width / 2,
+                            y: proxy.size.height * logoVerticalPosition
+                        )
+                }
             }
         }
         .aspectRatio(3 / 4, contentMode: .fit)
-        .clipShape(CardBackShape(maximumCornerRadius: cornerRadius))
+        .clipShape(
+            CardBackShape(
+                maximumCornerRadius: cornerRadius,
+                cornerRadiusRatio: skin.artworkCornerRadiusRatio
+            )
+        )
         .compositingGroup()
     }
 

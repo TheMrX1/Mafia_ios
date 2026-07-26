@@ -345,6 +345,18 @@ private struct MafiaMaskShape: Shape {
     }
 }
 
+struct CardBackShape: Shape {
+    let maximumCornerRadius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        RoundedRectangle(
+            cornerRadius: min(maximumCornerRadius, rect.width * 0.085),
+            style: .continuous
+        )
+        .path(in: rect)
+    }
+}
+
 struct CardBackView: View {
     let skin: CardSkin
     let theme: AppTheme
@@ -368,7 +380,7 @@ struct CardBackView: View {
             }
         }
         .aspectRatio(3 / 4, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .clipShape(CardBackShape(maximumCornerRadius: cornerRadius))
         .compositingGroup()
     }
 

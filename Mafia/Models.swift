@@ -99,16 +99,16 @@ enum CardSkin: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .classic: "Оригинал"
         case .premium: "Премиум"
-        case .obsidian: "Обсидиан"
-        case .neonCircuit: "Неоновая сеть"
+        case .obsidian: "Нуар"
+        case .neonCircuit: "Киберпанк"
         case .ukiyoE: "Лунный клан"
         case .evidence: "Досье"
         }
     }
 
-    var artwork: String? {
+    var artwork: String {
         switch self {
-        case .classic: nil
+        case .classic: "CardBackOriginal"
         case .premium: "CardBackPremium"
         case .obsidian: "CardBackObsidian"
         case .neonCircuit: "CardBackNeonCircuit"

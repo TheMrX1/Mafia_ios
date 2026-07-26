@@ -352,91 +352,34 @@ struct CardBackView: View {
 
     var body: some View {
         ZStack {
-            cardArtwork
+            Image(skin.artwork)
+                .resizable()
+                .scaledToFill()
 
-            if skin != .premium {
-                LinearGradient(
-                    colors: [Color.black.opacity(0.02), Color.black.opacity(0.20)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+            GeometryReader { proxy in
+                let side = min(proxy.size.width * logoScale, 76)
 
-                RoundedRectangle(cornerRadius: max(8, cornerRadius - 7), style: .continuous)
-                    .stroke(logoColor.opacity(0.62), lineWidth: 0.8)
-                    .padding(9)
-
-                GeometryReader { proxy in
-                    let side = min(proxy.size.width * logoScale, 76)
-
-                    GameLogoMark(color: logoColor)
-                        .frame(width: side, height: side)
-                        .position(
-                            x: proxy.size.width / 2,
-                            y: proxy.size.height * logoVerticalPosition
-                        )
-                }
+                GameLogoMark(color: logoColor)
+                    .frame(width: side, height: side)
+                    .position(
+                        x: proxy.size.width / 2,
+                        y: proxy.size.height * logoVerticalPosition
+                    )
             }
         }
         .aspectRatio(3 / 4, contentMode: .fit)
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: skin == .premium ? 0 : cornerRadius,
-                style: .continuous
-            )
-        )
-        .overlay {
-            if skin != .premium {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(logoColor.opacity(0.72), lineWidth: 1.1)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var cardArtwork: some View {
-        if let artwork = skin.artwork {
-            Image(artwork)
-                .resizable()
-                .scaledToFill()
-        } else {
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.12, green: 0.025, blue: 0.10),
-                        Color(red: 0.018, green: 0.010, blue: 0.035)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                ForEach(0..<5, id: \.self) { index in
-                    RoundedRectangle(
-                        cornerRadius: max(6, cornerRadius - CGFloat(index * 2)),
-                        style: .continuous
-                    )
-                    .stroke(
-                        logoColor.opacity(0.22 - Double(index) * 0.035),
-                        lineWidth: 0.7
-                    )
-                    .padding(CGFloat(15 + index * 9))
-                }
-
-                Circle()
-                    .fill(Color.black.opacity(0.38))
-                    .overlay {
-                        Circle().stroke(logoColor.opacity(0.74), lineWidth: 1)
-                    }
-                    .frame(maxWidth: 112, maxHeight: 112)
-            }
-        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .compositingGroup()
     }
 
     private var logoColor: Color {
         switch skin {
         case .classic:
             Color(red: 1, green: 0.30, blue: 0.58)
-        case .premium, .obsidian, .ukiyoE, .evidence:
+        case .premium, .ukiyoE, .evidence:
             Color(red: 0.96, green: 0.72, blue: 0.28)
+        case .obsidian:
+            Color(red: 0.72, green: 0.74, blue: 0.76)
         case .neonCircuit:
             Color(red: 0.27, green: 0.91, blue: 1)
         }
@@ -445,31 +388,22 @@ struct CardBackView: View {
     private var logoScale: CGFloat {
         switch skin {
         case .classic:
-            0.23
+            0.22
         case .premium:
-            0
+            0.20
         case .obsidian:
-            0.14
+            0.20
         case .neonCircuit:
-            0.21
+            0.20
         case .ukiyoE:
-            0.26
+            0.20
         case .evidence:
-            0.16
+            0.15
         }
     }
 
     private var logoVerticalPosition: CGFloat {
-        switch skin {
-        case .classic, .premium, .neonCircuit:
-            0.52
-        case .obsidian:
-            0.55
-        case .ukiyoE:
-            0.51
-        case .evidence:
-            0.50
-        }
+        0.50
     }
 }
 

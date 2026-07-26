@@ -87,6 +87,7 @@ enum RoleSkin: String, CaseIterable, Identifiable, Hashable {
 
 enum CardSkin: String, CaseIterable, Identifiable, Hashable {
     case classic
+    case premium
     case obsidian
     case neonCircuit
     case ukiyoE
@@ -97,6 +98,7 @@ enum CardSkin: String, CaseIterable, Identifiable, Hashable {
     var title: String {
         switch self {
         case .classic: "Оригинал"
+        case .premium: "Премиум"
         case .obsidian: "Обсидиан"
         case .neonCircuit: "Неоновая сеть"
         case .ukiyoE: "Лунный клан"
@@ -107,6 +109,7 @@ enum CardSkin: String, CaseIterable, Identifiable, Hashable {
     var artwork: String? {
         switch self {
         case .classic: nil
+        case .premium: "CardBackPremium"
         case .obsidian: "CardBackObsidian"
         case .neonCircuit: "CardBackNeonCircuit"
         case .ukiyoE: "CardBackUkiyoE"

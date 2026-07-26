@@ -354,17 +354,17 @@ struct CardBackView: View {
         ZStack {
             cardArtwork
 
-            LinearGradient(
-                colors: [Color.black.opacity(0.02), Color.black.opacity(0.20)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            if skin != .premium {
+                LinearGradient(
+                    colors: [Color.black.opacity(0.02), Color.black.opacity(0.20)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
 
-            RoundedRectangle(cornerRadius: max(8, cornerRadius - 7), style: .continuous)
-                .stroke(logoColor.opacity(0.62), lineWidth: 0.8)
-                .padding(9)
+                RoundedRectangle(cornerRadius: max(8, cornerRadius - 7), style: .continuous)
+                    .stroke(logoColor.opacity(0.62), lineWidth: 0.8)
+                    .padding(9)
 
-            if skin != .classic {
                 GeometryReader { proxy in
                     let side = min(proxy.size.width * logoScale, 76)
 
@@ -378,10 +378,17 @@ struct CardBackView: View {
             }
         }
         .aspectRatio(3 / 4, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: skin == .premium ? 0 : cornerRadius,
+                style: .continuous
+            )
+        )
         .overlay {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(logoColor.opacity(0.72), lineWidth: 1.1)
+            if skin != .premium {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(logoColor.opacity(0.72), lineWidth: 1.1)
+            }
         }
     }
 
@@ -392,7 +399,35 @@ struct CardBackView: View {
                 .resizable()
                 .scaledToFill()
         } else {
-            ClassicCardArtwork(accent: logoColor, cornerRadius: cornerRadius)
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.12, green: 0.025, blue: 0.10),
+                        Color(red: 0.018, green: 0.010, blue: 0.035)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                ForEach(0..<5, id: \.self) { index in
+                    RoundedRectangle(
+                        cornerRadius: max(6, cornerRadius - CGFloat(index * 2)),
+                        style: .continuous
+                    )
+                    .stroke(
+                        logoColor.opacity(0.22 - Double(index) * 0.035),
+                        lineWidth: 0.7
+                    )
+                    .padding(CGFloat(15 + index * 9))
+                }
+
+                Circle()
+                    .fill(Color.black.opacity(0.38))
+                    .overlay {
+                        Circle().stroke(logoColor.opacity(0.74), lineWidth: 1)
+                    }
+                    .frame(maxWidth: 112, maxHeight: 112)
+            }
         }
     }
 
@@ -400,7 +435,7 @@ struct CardBackView: View {
         switch skin {
         case .classic:
             Color(red: 1, green: 0.30, blue: 0.58)
-        case .obsidian, .ukiyoE, .evidence:
+        case .premium, .obsidian, .ukiyoE, .evidence:
             Color(red: 0.96, green: 0.72, blue: 0.28)
         case .neonCircuit:
             Color(red: 0.27, green: 0.91, blue: 1)
@@ -411,6 +446,8 @@ struct CardBackView: View {
         switch skin {
         case .classic:
             0.23
+        case .premium:
+            0
         case .obsidian:
             0.14
         case .neonCircuit:
@@ -424,7 +461,7 @@ struct CardBackView: View {
 
     private var logoVerticalPosition: CGFloat {
         switch skin {
-        case .classic, .neonCircuit:
+        case .classic, .premium, .neonCircuit:
             0.52
         case .obsidian:
             0.55
@@ -432,82 +469,6 @@ struct CardBackView: View {
             0.51
         case .evidence:
             0.50
-        }
-    }
-}
-
-private struct ClassicCardArtwork: View {
-    let accent: Color
-    let cornerRadius: CGFloat
-
-    var body: some View {
-        GeometryReader { proxy in
-            let width = proxy.size.width
-            let height = proxy.size.height
-
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.075, green: 0.045, blue: 0.14),
-                        Color(red: 0.018, green: 0.012, blue: 0.045)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                RoundedRectangle(cornerRadius: max(8, cornerRadius - 10), style: .continuous)
-                    .stroke(Color.white.opacity(0.13), lineWidth: 0.8)
-                    .padding(width * 0.055)
-
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [.clear, Color.white.opacity(0.12), .clear],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .frame(width: width * 0.28, height: height * 1.3)
-                    .rotationEffect(.degrees(24))
-                    .offset(x: -width * 0.13, y: -height * 0.04)
-
-                ZStack {
-                    ForEach(0..<3, id: \.self) { index in
-                        Circle()
-                            .stroke(
-                                accent.opacity(0.30 - Double(index) * 0.07),
-                                lineWidth: 0.8
-                            )
-                            .frame(
-                                width: width * (0.24 + CGFloat(index) * 0.11),
-                                height: width * (0.24 + CGFloat(index) * 0.11)
-                            )
-                    }
-                }
-                .position(x: width / 2, y: height * 0.51)
-
-                Image(systemName: "crown.fill")
-                    .font(.system(size: width * 0.105, weight: .bold))
-                    .foregroundStyle(accent)
-                    .position(x: width / 2, y: height * 0.29)
-
-                Image(systemName: "suit.spade.fill")
-                    .font(.system(size: width * 0.18, weight: .bold))
-                    .foregroundStyle(accent)
-                    .position(x: width / 2, y: height * 0.51)
-
-                VStack(spacing: max(2, height * 0.012)) {
-                    Text("MAFIA")
-                        .font(.system(size: width * 0.11, weight: .bold, design: .serif))
-                        .tracking(width * 0.018)
-
-                    Text("PRIVATE GAME")
-                        .font(.system(size: width * 0.037, weight: .bold, design: .rounded))
-                        .tracking(width * 0.018)
-                }
-                .foregroundStyle(accent)
-                .position(x: width / 2, y: height * 0.73)
-            }
         }
     }
 }
